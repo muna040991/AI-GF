@@ -237,10 +237,38 @@ just reachable from another device you own. **One caveat**: the mic button
 plain `http://192.168.x.x` address doesn't count as — most mobile browsers
 will silently block microphone access there. Text chat, images, and video
 all work fine over plain HTTP; only voice *input* is affected (voice
-*output* still works everywhere). If you need to test voice input on your
-phone specifically, you'd need to set up HTTPS for the dev server (e.g. a
-self-signed certificate) or a tunneling tool like Tailscale, which is
-beyond this basic setup.
+*output* still works everywhere).
+
+#### Testing voice input too (HTTPS)
+
+To also test the mic on your phone, run the HTTPS variant instead:
+
+```bash
+npm run dev:https
+```
+
+This is the exact same app — it just wraps the dev server in a
+locally-generated, self-signed TLS certificate (via
+`@vitejs/plugin-basic-ssl`, nothing sent anywhere, generated fresh on your
+machine). Then:
+
+1. On your phone, go to `https://<that address>:5173` (note **https**, not
+   http) — e.g. `https://192.168.1.23:5173`.
+2. Your phone's browser will show a warning like "Your connection is not
+   private" or "This connection is not secure" — **this is expected**, not
+   a real problem. It's because the certificate is self-signed by your own
+   computer rather than issued by a public authority; there's no way around
+   this for a private local address.
+   - **Chrome (Android)**: tap "Advanced", then "Proceed to \<address\>
+     (unsafe)".
+   - **Safari (iOS)**: tap "Show Details", then "visit this website", then
+     confirm.
+3. Once past that warning, the mic button will prompt for microphone
+   permission normally and voice input will work.
+
+Use plain `npm run dev` day-to-day (no warnings to click through); switch
+to `npm run dev:https` only when you specifically want to test voice input
+from another device.
 
 ### Production build
 
