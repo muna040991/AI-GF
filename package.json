@@ -1,8 +1,8 @@
 {
-  "name": "ai-gf",
+  "name": "unlucid-mohini",
   "private": true,
   "version": "0.1.0",
-  "description": "Fully offline, local-only AI chat companion. Talks only to a local Ollama server — no cloud calls.",
+  "description": "Unlucid Mohini — fully offline, local-only AI chat companion. Talks only to a local Ollama server, no cloud calls.",
   "workspaces": [
     "server",
     "client"

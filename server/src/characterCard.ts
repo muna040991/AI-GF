@@ -25,7 +25,7 @@ export function exportPersonaAsCard(persona: Persona) {
       scenario: "",
       first_mes: "",
       mes_example: "",
-      creator_notes: "Exported from AI-GF.",
+      creator_notes: "Exported from Unlucid Mohini.",
       system_prompt: persona.systemPrompt,
       post_history_instructions: "",
       alternate_greetings: [] as string[],
@@ -42,6 +42,7 @@ export function exportPersonaAsCard(persona: Persona) {
           maxTokens: persona.maxTokens,
           appearance: persona.appearance,
           styleReferenceImage: persona.styleReferenceImage,
+          galleryImages: persona.galleryImages,
         },
       },
     },
@@ -90,5 +91,9 @@ export function importCharacterCard(raw: unknown): SeedPersona {
     temperature: typeof aigf.temperature === "number" ? aigf.temperature : undefined,
     maxTokens: typeof aigf.maxTokens === "number" ? aigf.maxTokens : undefined,
     appearance: typeof aigf.appearance === "string" ? aigf.appearance : undefined,
+    styleReferenceImage: typeof aigf.styleReferenceImage === "string" ? aigf.styleReferenceImage : undefined,
+    galleryImages: Array.isArray(aigf.galleryImages)
+      ? aigf.galleryImages.filter((img): img is string => typeof img === "string")
+      : undefined,
   };
 }

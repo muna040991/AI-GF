@@ -51,7 +51,7 @@ export function Sidebar({
       {mobileOpen && <div className="sidebar-backdrop" onClick={onMobileClose} />}
       <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
         <div className="app-bar">
-          <span className="app-title">AI-GF</span>
+          <span className="app-title">Unlucid Mohini</span>
           <button className="icon-btn" onClick={onOpenSearch} title="Search conversations">
             🔍
           </button>

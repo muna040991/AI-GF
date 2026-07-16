@@ -61,7 +61,8 @@ body {
 
 .app-title {
   font-weight: 800;
-  font-size: 18px;
+  font-size: 15px;
+  white-space: nowrap;
   letter-spacing: 0.01em;
   background: var(--gradient);
   -webkit-background-clip: text;
@@ -827,6 +828,55 @@ body {
 .avatar-upload-row .avatar-dot {
   width: 40px;
   height: 40px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gallery-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-thumb-actions {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.gallery-thumb:hover .gallery-thumb-actions {
+  opacity: 1;
+}
+
+.gallery-thumb-actions button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #241a30;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
 }
 
 .color-row {

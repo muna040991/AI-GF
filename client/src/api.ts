@@ -10,6 +10,7 @@ export interface Persona {
   maxTokens?: number;
   appearance?: string;
   styleReferenceImage?: string;
+  galleryImages?: string[];
   createdAt: number;
 }
 
@@ -80,6 +81,15 @@ export const api = {
     }).then((r) => json<Persona>(r)),
   deletePersona: (id: string) => fetch(`/api/personas/${id}`, { method: "DELETE" }),
   exportPersona: (id: string) => fetch(`/api/personas/${id}/export`).then((r) => json<unknown>(r)),
+
+  addGalleryImage: (personaId: string, image: string) =>
+    fetch(`/api/personas/${personaId}/gallery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image }),
+    }).then((r) => json<string[]>(r)),
+  deleteGalleryImage: (personaId: string, index: number) =>
+    fetch(`/api/personas/${personaId}/gallery/${index}`, { method: "DELETE" }).then((r) => json<string[]>(r)),
   importPersona: (card: unknown) =>
     fetch("/api/personas/import", {
       method: "POST",

@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#8b5cf6"/>
-      <stop offset="100%" stop-color="#ec4899"/>
+      <stop offset="0%" stop-color="#ff5c8a"/>
+      <stop offset="100%" stop-color="#a855f7"/>
     </linearGradient>
   </defs>
   <rect width="192" height="192" rx="40" fill="url(#g)"/>
-  <text x="96" y="122" font-family="Segoe UI, system-ui, sans-serif" font-size="88" font-weight="700"
-        text-anchor="middle" fill="#ffffff">AI</text>
+  <text x="96" y="122" font-family="Segoe UI, system-ui, sans-serif" font-size="80" font-weight="700"
+        text-anchor="middle" fill="#ffffff">UM</text>
 </svg>

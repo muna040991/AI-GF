@@ -1,4 +1,4 @@
-# AI-GF
+# Unlucid Mohini
 
 A fully offline, local-only AI chat companion. The app itself never makes a
 network call — all inference runs through local services on `127.0.0.1`
@@ -33,6 +33,9 @@ following your local laws for any content you generate. Characters must be
 - Ships with two starter characters (Yamuna and Yallamma) pre-seeded on first
   run, so it's not a blank slate — edit or delete them like any other
   character (`server/src/seedPersonas.ts`)
+- **Photo gallery**: store multiple reference photos per character (once
+  they're saved). Tap ★ on any photo to promote it to that character's style
+  reference; same loose-style behavior as above, not identity-locking
 
 **Voice**
 - **Voice input**: mic button, transcribed locally via whisper.cpp
@@ -47,8 +50,8 @@ following your local laws for any content you generate. Characters must be
 - **Style reference image**: optionally upload a reference photo per
   character; generated selfies are nudged toward its general color
   palette/vibe via img2img. This is loose stylistic continuity, not
-  identity-locked photorealistic likeness generation — AI-GF doesn't do that
-  by design, regardless of the reference image
+  identity-locked photorealistic likeness generation — this app doesn't do
+  that by design, regardless of the reference image
 - **Vision input**: attach a photo in chat for the character to respond to
   (needs a vision-capable local model, e.g. `llava`)
 - **Animate a selfie into a short video**: local ComfyUI turns the most
@@ -184,12 +187,13 @@ no single JSON payload that works for everyone's install, so:
    you want the motion prompt text box to actually influence the motion
    (plain SVD is image-only and ignores it).
 2. Right-click your image-loading node → **Properties** → set **Title** to
-   exactly `AI-GF Image Input`.
+   exactly `Unlucid Mohini Image Input`.
 3. Right-click your final video-output node (e.g. a Video Helper Suite
-   "Video Combine" node) → set its **Title** to exactly `AI-GF Video Output`.
+   "Video Combine" node) → set its **Title** to exactly
+   `Unlucid Mohini Video Output`.
 4. If your workflow has a text-prompt node driving motion, title it
-   `AI-GF Motion Prompt` — optional, only wire this up if your workflow
-   actually uses text conditioning.
+   `Unlucid Mohini Motion Prompt` — optional, only wire this up if your
+   workflow actually uses text conditioning.
 5. Export via **Workflow → Export (API Format)** and save it as
    `server/comfyui-workflow.json` (gitignored — it's your local setup, not
    checked in).
@@ -249,6 +253,6 @@ npm start   # serves the built API on 5174; serve client/dist with any static fi
   conversation — matches how most chat/roleplay UIs handle it, and avoids
   silently invalidating everything that came after an earlier message.
 - Character card export/import uses the "Character Card V2" JSON shape
-  (the same one SillyTavern/Character.AI-style tools use), with AI-GF's
+  (the same one SillyTavern/Character.AI-style tools use), with this app's
   extra fields (model, temperature, voice, etc.) riding along in
-  `data.extensions.aigf` for full round-trip fidelity between AI-GF installs.
+  `data.extensions.aigf` for full round-trip fidelity between installs.

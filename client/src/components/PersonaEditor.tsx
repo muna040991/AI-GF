@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { OllamaModel, Persona } from "../api.js";
+import { api, type OllamaModel, type Persona } from "../api.js";
 import { getVoices, isSpeechSynthesisSupported } from "../tts.js";
 
 interface Props {
@@ -28,6 +28,9 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
   const [styleReferenceImage, setStyleReferenceImage] = useState(persona?.styleReferenceImage ?? "");
   const [temperature, setTemperature] = useState(persona?.temperature?.toString() ?? "");
   const [maxTokens, setMaxTokens] = useState(persona?.maxTokens?.toString() ?? "");
+  const [galleryImages, setGalleryImages] = useState<string[]>(persona?.galleryImages ?? []);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   useEffect(() => {
     getVoices().then(setVoices);
@@ -53,6 +56,48 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
       if (typeof reader.result === "string") setStyleReferenceImage(reader.result);
     };
     reader.readAsDataURL(file);
+  }
+
+  function readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("Could not read file."));
+      };
+      reader.onerror = () => reject(new Error("Could not read file."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0 || !persona) return;
+
+    setGalleryError(null);
+    setGalleryUploading(true);
+    try {
+      for (const file of files) {
+        const dataUrl = await readAsDataUrl(file);
+        const updated = await api.addGalleryImage(persona.id, dataUrl);
+        setGalleryImages(updated);
+      }
+    } catch (err) {
+      setGalleryError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setGalleryUploading(false);
+    }
+  }
+
+  async function handleDeleteGalleryImage(index: number) {
+    if (!persona) return;
+    try {
+      const updated = await api.deleteGalleryImage(persona.id, index);
+      setGalleryImages(updated);
+    } catch (err) {
+      setGalleryError(err instanceof Error ? err.message : "Delete failed.");
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -175,10 +220,42 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
           </div>
           <span className="hint">
             Nudges generated selfies toward this image's general color palette and vibe. This is loose
-            stylistic continuity, not a precise face match — AI-GF doesn't do identity-locked photorealistic
-            generation.
+            stylistic continuity, not a precise face match — this app doesn't do identity-locked
+            photorealistic generation.
           </span>
         </label>
+
+        {persona && (
+          <label>
+            Photo gallery
+            <div className="gallery-grid">
+              {galleryImages.map((img, i) => (
+                <div key={i} className="gallery-thumb">
+                  <img src={img} alt="" />
+                  <div className="gallery-thumb-actions">
+                    <button
+                      type="button"
+                      onClick={() => setStyleReferenceImage(img)}
+                      title="Use as style reference"
+                    >
+                      ★
+                    </button>
+                    <button type="button" onClick={() => handleDeleteGalleryImage(i)} title="Delete">
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <input type="file" accept="image/*" multiple onChange={handleGalleryFiles} disabled={galleryUploading} />
+            {galleryUploading && <span className="hint">Uploading…</span>}
+            {galleryError && <span className="hint">{galleryError}</span>}
+            <span className="hint">
+              Store reference photos here, then tap ★ on one to use it as the style reference above. Same
+              loose-style behavior — not identity-locked generation.
+            </span>
+          </label>
+        )}
 
         <label>
           Color

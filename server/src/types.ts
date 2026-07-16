@@ -21,6 +21,8 @@ export interface Persona {
    * specific face precisely, by design.
    */
   styleReferenceImage?: string;
+  /** A stored library of reference photos for this character; any one can be promoted to styleReferenceImage. */
+  galleryImages?: string[];
   createdAt: number;
 }
 

@@ -112,6 +112,61 @@ personasRouter.post("/:id/memories", async (req, res) => {
   res.status(201).json(toClientMemory(memory));
 });
 
+personasRouter.get("/:id/gallery", (req, res) => {
+  const persona = db.get().personas.find((p) => p.id === req.params.id);
+  if (!persona) {
+    res.status(404).json({ error: "persona not found" });
+    return;
+  }
+  res.json(persona.galleryImages ?? []);
+});
+
+personasRouter.post("/:id/gallery", (req, res) => {
+  const { id } = req.params;
+  const image: string = req.body?.image ?? "";
+  if (!image.trim()) {
+    res.status(400).json({ error: "image is required" });
+    return;
+  }
+
+  const gallery = db.mutate((s) => {
+    const persona = s.personas.find((p) => p.id === id);
+    if (!persona) return null;
+    persona.galleryImages = [...(persona.galleryImages ?? []), image];
+    return persona.galleryImages;
+  });
+
+  if (!gallery) {
+    res.status(404).json({ error: "persona not found" });
+    return;
+  }
+  res.status(201).json(gallery);
+});
+
+personasRouter.delete("/:id/gallery/:index", (req, res) => {
+  const { id } = req.params;
+  const index = Number(req.params.index);
+
+  const gallery = db.mutate((s) => {
+    const persona = s.personas.find((p) => p.id === id);
+    if (!persona) return null;
+    const images = persona.galleryImages ?? [];
+    if (!Number.isInteger(index) || index < 0 || index >= images.length) return undefined;
+    persona.galleryImages = images.filter((_, i) => i !== index);
+    return persona.galleryImages;
+  });
+
+  if (gallery === null) {
+    res.status(404).json({ error: "persona not found" });
+    return;
+  }
+  if (gallery === undefined) {
+    res.status(400).json({ error: "invalid gallery index" });
+    return;
+  }
+  res.json(gallery);
+});
+
 personasRouter.put("/:id", (req, res) => {
   const { id } = req.params;
   const updated = db.mutate((s) => {

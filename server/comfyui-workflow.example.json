@@ -1,7 +1,7 @@
 {
   "6": {
     "class_type": "LoadImage",
-    "_meta": { "title": "AI-GF Image Input" },
+    "_meta": { "title": "Unlucid Mohini Image Input" },
     "inputs": { "image": "example.png", "upload": "image" }
   },
   "8": {
@@ -47,7 +47,7 @@
   },
   "12": {
     "class_type": "VHS_VideoCombine",
-    "_meta": { "title": "AI-GF Video Output" },
+    "_meta": { "title": "Unlucid Mohini Video Output" },
     "inputs": {
       "images": ["11", 0],
       "frame_rate": 6,

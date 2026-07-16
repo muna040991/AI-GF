@@ -16,9 +16,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const COMFYUI_HOST = process.env.COMFYUI_HOST ?? "http://127.0.0.1:8188";
 const WORKFLOW_PATH = process.env.COMFYUI_WORKFLOW_PATH ?? join(__dirname, "..", "comfyui-workflow.json");
 
-const IMAGE_INPUT_TITLE = "AI-GF Image Input";
-const MOTION_PROMPT_TITLE = "AI-GF Motion Prompt";
-const VIDEO_OUTPUT_TITLE = "AI-GF Video Output";
+const IMAGE_INPUT_TITLE = "Unlucid Mohini Image Input";
+const MOTION_PROMPT_TITLE = "Unlucid Mohini Motion Prompt";
+const VIDEO_OUTPUT_TITLE = "Unlucid Mohini Video Output";
 
 const POLL_INTERVAL_MS = 2000;
 const MAX_WAIT_MS = 5 * 60 * 1000; // video generation is slow, even locally on a GPU
@@ -92,7 +92,7 @@ async function uploadImage(dataUri: string): Promise<string> {
  * Runs the configured local image-to-video ComfyUI workflow against a
  * source image and motion prompt, returning the resulting clip as a
  * data URI. Requires server/comfyui-workflow.json with three nodes titled
- * "AI-GF Image Input", "AI-GF Motion Prompt", and "AI-GF Video Output"
+ * "Unlucid Mohini Image Input", "Unlucid Mohini Motion Prompt", and "Unlucid Mohini Video Output"
  * (set via each node's title in the ComfyUI UI) so this client knows where
  * to patch in the image/prompt and where to read the result from,
  * regardless of the rest of the graph's shape.
