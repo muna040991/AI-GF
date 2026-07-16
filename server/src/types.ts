@@ -14,6 +14,13 @@ export interface Persona {
   maxTokens?: number;
   /** Short visual description used as the base prompt for AI-generated selfies. */
   appearance?: string;
+  /**
+   * Optional reference image used for loose stylistic continuity (color
+   * palette, outfit/art-style vibe) across generated selfies via img2img.
+   * This is NOT identity/face-locking — it doesn't attempt to reproduce a
+   * specific face precisely, by design.
+   */
+  styleReferenceImage?: string;
   createdAt: number;
 }
 

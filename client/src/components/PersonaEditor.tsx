@@ -25,6 +25,7 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [avatarImage, setAvatarImage] = useState(persona?.avatarImage ?? "");
   const [appearance, setAppearance] = useState(persona?.appearance ?? "");
+  const [styleReferenceImage, setStyleReferenceImage] = useState(persona?.styleReferenceImage ?? "");
   const [temperature, setTemperature] = useState(persona?.temperature?.toString() ?? "");
   const [maxTokens, setMaxTokens] = useState(persona?.maxTokens?.toString() ?? "");
 
@@ -43,6 +44,17 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
     reader.readAsDataURL(file);
   }
 
+  function handleStyleReferenceFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setStyleReferenceImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !systemPrompt.trim() || !model) return;
@@ -54,6 +66,7 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
       voiceURI: voiceURI || undefined,
       avatarImage: avatarImage || undefined,
       appearance: appearance.trim() || undefined,
+      styleReferenceImage: styleReferenceImage || undefined,
       temperature: temperature.trim() ? Number(temperature) : undefined,
       maxTokens: maxTokens.trim() ? Number(maxTokens) : undefined,
     });
@@ -143,6 +156,28 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
             rows={2}
             placeholder="e.g. 44 year old Indian woman, warm smile, traditional saree, kitchen background"
           />
+        </label>
+
+        <label>
+          Style reference image (optional)
+          <div className="avatar-upload-row">
+            {styleReferenceImage ? (
+              <img src={styleReferenceImage} alt="" className="avatar-img" />
+            ) : (
+              <span className="avatar-dot" style={{ background: "var(--panel-2)" }} />
+            )}
+            <input type="file" accept="image/*" onChange={handleStyleReferenceFile} />
+            {styleReferenceImage && (
+              <button type="button" onClick={() => setStyleReferenceImage("")}>
+                Remove
+              </button>
+            )}
+          </div>
+          <span className="hint">
+            Nudges generated selfies toward this image's general color palette and vibe. This is loose
+            stylistic continuity, not a precise face match — AI-GF doesn't do identity-locked photorealistic
+            generation.
+          </span>
         </label>
 
         <label>

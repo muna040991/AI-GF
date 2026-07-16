@@ -9,6 +9,7 @@ export interface Persona {
   temperature?: number;
   maxTokens?: number;
   appearance?: string;
+  styleReferenceImage?: string;
   createdAt: number;
 }
 

@@ -41,6 +41,7 @@ export function exportPersonaAsCard(persona: Persona) {
           temperature: persona.temperature,
           maxTokens: persona.maxTokens,
           appearance: persona.appearance,
+          styleReferenceImage: persona.styleReferenceImage,
         },
       },
     },

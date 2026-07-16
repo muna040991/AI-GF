@@ -44,12 +44,18 @@ following your local laws for any content you generate. Characters must be
 **Images & video**
 - **AI-generated selfies**: local Stable Diffusion (Automatic1111) generates
   an in-character photo on request
+- **Style reference image**: optionally upload a reference photo per
+  character; generated selfies are nudged toward its general color
+  palette/vibe via img2img. This is loose stylistic continuity, not
+  identity-locked photorealistic likeness generation — AI-GF doesn't do that
+  by design, regardless of the reference image
 - **Vision input**: attach a photo in chat for the character to respond to
   (needs a vision-capable local model, e.g. `llava`)
 - **Animate a selfie into a short video**: local ComfyUI turns the most
-  recent photo (generated, attached, or the character's avatar) into a video
-  clip, with a motion-prompt box and a few motion templates (Cinematic Zoom,
-  Slow Pan, Dramatic Reveal, Gentle Sway); download or keep it in the chat
+  recent photo (generated, attached, the style reference, or the character's
+  avatar) into a video clip, with a motion-prompt box and a few motion
+  templates (Cinematic Zoom, Slow Pan, Dramatic Reveal, Gentle Sway);
+  download or keep it in the chat
 
 **App**
 - **Light/dark theme** toggle
@@ -224,14 +230,16 @@ npm start   # serves the built API on 5174; serve client/dist with any static fi
 - `WHISPER_HOST` env var (default `http://127.0.0.1:8081`) points at your
   local whisper.cpp server for voice input.
 - `SD_HOST` env var (default `http://127.0.0.1:7860`) points at your local
-  Automatic1111 server for image generation.
+  Automatic1111 server for image generation. When a character has a style
+  reference image set, generation uses `img2img` at denoising strength 0.65
+  (moderate — prompt-driven, loosely style-anchored) instead of `txt2img`.
 - `COMFYUI_HOST` env var (default `http://127.0.0.1:8188`) points at your
   local ComfyUI server for image-to-video generation. `COMFYUI_WORKFLOW_PATH`
   overrides where the workflow JSON is read from (default
   `server/comfyui-workflow.json`).
 - The 🎬 Animate button animates, in order of preference: an image you
   explicitly pick, the most recently generated/attached image in the current
-  conversation, or the character's avatar image.
+  conversation, the character's style reference image, or its avatar image.
 - Voice output uses whichever system/browser voices are installed. Pick a
   per-character voice in the persona editor, or leave it on "Browser default".
 - The mic button records with `MediaRecorder`; browsers require a secure

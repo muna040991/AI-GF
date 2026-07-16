@@ -197,7 +197,7 @@ conversationsRouter.post("/:id/images", async (req, res) => {
   }
 
   try {
-    const image = await generateImage(fullPrompt);
+    const image = await generateImage(fullPrompt, persona.styleReferenceImage);
     const message: Message = {
       id: nanoid(),
       conversationId: id,
@@ -237,7 +237,7 @@ conversationsRouter.post("/:id/videos", async (req, res) => {
 
   const lastMessageImage = [...sortedMessages(id)].reverse().find((m) => m.images && m.images.length > 0)
     ?.images?.[0];
-  const sourceImage = explicitImage || lastMessageImage || persona.avatarImage;
+  const sourceImage = explicitImage || lastMessageImage || persona.styleReferenceImage || persona.avatarImage;
   if (!sourceImage) {
     res.status(400).json({
       error: "No image to animate — generate or attach a photo first, or set the character's avatar image.",

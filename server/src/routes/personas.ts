@@ -17,6 +17,7 @@ const EDITABLE_FIELDS = [
   "temperature",
   "maxTokens",
   "appearance",
+  "styleReferenceImage",
 ] as const;
 
 function toClientMemory(m: Memory) {
@@ -29,8 +30,18 @@ personasRouter.get("/", (_req, res) => {
 });
 
 personasRouter.post("/", (req, res) => {
-  const { name, systemPrompt, model, avatarColor, voiceURI, avatarImage, temperature, maxTokens, appearance } =
-    req.body ?? {};
+  const {
+    name,
+    systemPrompt,
+    model,
+    avatarColor,
+    voiceURI,
+    avatarImage,
+    temperature,
+    maxTokens,
+    appearance,
+    styleReferenceImage,
+  } = req.body ?? {};
   if (!name || !systemPrompt || !model) {
     res.status(400).json({ error: "name, systemPrompt and model are required" });
     return;
@@ -47,6 +58,7 @@ personasRouter.post("/", (req, res) => {
     temperature: typeof temperature === "number" ? temperature : undefined,
     maxTokens: typeof maxTokens === "number" ? maxTokens : undefined,
     appearance: appearance || undefined,
+    styleReferenceImage: styleReferenceImage || undefined,
     createdAt: Date.now(),
   };
   db.mutate((s) => s.personas.push(persona));
@@ -110,7 +122,7 @@ personasRouter.put("/:id", (req, res) => {
     for (const field of EDITABLE_FIELDS) {
       const value = req.body?.[field];
       if (value === undefined) continue;
-      if (field === "voiceURI" || field === "avatarImage" || field === "appearance") {
+      if (field === "voiceURI" || field === "avatarImage" || field === "appearance" || field === "styleReferenceImage") {
         target[field] = value || undefined;
       } else {
         target[field] = value;
