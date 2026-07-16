@@ -10,7 +10,7 @@ REM --- Check Node.js / npm ---
 where npm >nul 2>nul
 if errorlevel 1 (
     echo [ERROR] Node.js does not seem to be installed.
-    echo Install it from https://nodejs.org (the LTS version), then run this again.
+    echo Install it from https://nodejs.org ^(the LTS version^), then run this again.
     pause
     exit /b 1
 )
