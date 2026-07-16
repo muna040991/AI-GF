@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Conversation, Persona } from "../api.js";
+import { applyTheme, getStoredTheme, type Theme } from "../theme.js";
 
 interface Props {
   personas: Persona[];
@@ -45,6 +46,13 @@ export function Sidebar({
   onMobileClose,
 }: Props) {
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [theme, setTheme] = useState<Theme>(getStoredTheme());
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    applyTheme(next);
+    setTheme(next);
+  }
 
   return (
     <>
@@ -52,9 +60,18 @@ export function Sidebar({
       <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
         <div className="app-bar">
           <span className="app-title">Unlucid Mohini</span>
-          <button className="icon-btn" onClick={onOpenSearch} title="Search conversations">
-            🔍
-          </button>
+          <div className="app-bar-actions">
+            <button
+              className="icon-btn"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              {theme === "dark" ? "🌙" : "☀️"}
+            </button>
+            <button className="icon-btn" onClick={onOpenSearch} title="Search conversations">
+              🔍
+            </button>
+          </div>
         </div>
 
       <div className="sidebar-section">
