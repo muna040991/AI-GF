@@ -11,20 +11,6 @@ if not exist "node_modules" (
     pause
     exit /b 1
 )
-if not exist "server\node_modules" (
-    echo [ERROR] Setup hasn't finished successfully.
-    echo Please double-click setup-windows.bat first, wait for it to say
-    echo "Setup complete!", then run this again.
-    pause
-    exit /b 1
-)
-if not exist "client\node_modules" (
-    echo [ERROR] Setup hasn't finished successfully.
-    echo Please double-click setup-windows.bat first, wait for it to say
-    echo "Setup complete!", then run this again.
-    pause
-    exit /b 1
-)
 
 echo A second window will open showing the app's logs - leave it open
 echo while you use the app. This window will open your browser
