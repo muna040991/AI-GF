@@ -108,21 +108,60 @@ for you automatically, using Ollama's own downloader (which is built for
 exactly this, unlike Git):
 
 1. On this repo's GitHub page, click the green **Code** button →
-   **Download ZIP**, then extract it.
-2. Install [Node.js](https://nodejs.org) (LTS version) and
+   **Download ZIP**, then extract the ZIP to a folder (e.g. your Desktop).
+   You should end up with a folder containing files like `README.md`,
+   `setup-windows.bat`, `package.json`, etc.
+2. Install [Node.js](https://nodejs.org) (click the **LTS** button) and
    [Ollama](https://ollama.com) if you haven't already — both are quick
-   installers, click Next through the defaults.
-3. Double-click **`setup-windows.bat`** in the extracted folder. It
-   installs the app and downloads the required models automatically
-   (dolphin-mistral, the chat model, is the large one — this step needs a
-   decent internet connection and some patience).
-4. Once that finishes, double-click **`start-windows.bat`** any time you
-   want to run the app — it starts everything and opens your browser to
-   it automatically.
+   installers, click Next through the defaults, no options to configure.
+   Restart your computer after installing if it asks you to.
+3. Open that extracted folder and double-click **`setup-windows.bat`**.
+   A black window will open and print progress messages. This step
+   downloads the AI model (~4 GB) so it needs a decent internet connection
+   and can take anywhere from a few minutes to a while depending on your
+   speed — **wait until it prints "Setup complete!"** before doing
+   anything else. If it prints an `[ERROR]` line instead, read that line —
+   it tells you exactly what to fix (usually: install Node.js/Ollama, or
+   check your internet connection) before running it again.
+4. Once you see "Setup complete!", double-click **`start-windows.bat`**
+   any time you want to run the app. Two windows will open: one with the
+   app's logs (leave it running in the background) and, a few seconds
+   later, your normal web browser opens to the app automatically —
+   no security warnings, no extra clicks.
+5. To close the app, close the black "Unlucid Mohini Server" window (or
+   just close it whenever you're done chatting). Your characters and
+   conversations are saved automatically and will still be there next
+   time you run `start-windows.bat`.
 
-That's the whole setup. Everything below explains what those scripts are
-doing under the hood, and covers Mac/Linux and the optional voice/image/
-video extras.
+Want to also try it from your phone? See
+[Testing on your phone](#testing-on-your-phone) below — it needs one
+extra one-click script (`start-windows-phone.bat`).
+
+### If something goes wrong
+
+- **"Can't reach this page" / `ERR_CONNECTION_REFUSED`** in the browser —
+  this means the app server wasn't actually running yet when the browser
+  opened. Almost always this means step 3 above (`setup-windows.bat`)
+  never finished. Close everything, re-run `setup-windows.bat`, and
+  confirm it prints **"Setup complete!"** at the end before you run
+  `start-windows.bat`.
+- **`start-windows.bat` immediately shows a red `[ERROR]`** — it's telling
+  you setup hasn't finished; follow the message it prints.
+- **The black server window shows red error text** — that's the real
+  problem to read; common ones are "Ollama unreachable" (Ollama isn't
+  running — just open the Ollama app once and leave it running in the
+  background) or a port already in use (close any other copy of the app
+  you already have running, including old black windows from a previous
+  attempt).
+- **Antivirus/Windows Defender flags the `.bat` files or blocks the
+  browser opening** — these scripts only run `npm install`/`ollama pull`/
+  `npm run dev` and open your local browser; if prompted, allow them.
+- Still stuck? Look at the text in the black "Unlucid Mohini Server"
+  window — it says exactly what failed, which is the fastest way to
+  figure out the fix.
+
+Everything below explains what those scripts are doing under the hood,
+and covers Mac/Linux and the optional voice/image/video extras.
 
 ## Setup
 
@@ -244,8 +283,15 @@ and start chatting.
 
 ### Testing on your phone
 
-You can open the app from a phone on the same WiFi as your computer — no
-extra setup needed, `npm run dev` already allows it:
+**Windows, no command line:** double-click **`start-windows-phone.bat`**
+instead of `start-windows.bat`. It starts the app with voice input enabled
+for your phone, prints the exact web address to type into your phone's
+browser, and opens the app on your computer too. Your phone just needs to
+be on the same WiFi network as your computer.
+
+**Manual steps (any OS):** you can open the app from a phone on the same
+WiFi as your computer — no extra setup needed, `npm run dev` already
+allows it:
 
 1. Find your computer's local network address: on Windows, run `ipconfig`
    and look for "IPv4 Address" (something like `192.168.1.23`); on
@@ -267,7 +313,8 @@ all work fine over plain HTTP; only voice *input* is affected (voice
 
 #### Testing voice input too (HTTPS)
 
-To also test the mic on your phone, run the HTTPS variant instead:
+`start-windows-phone.bat` already does this step for you. If you're doing
+it manually instead, run the HTTPS variant:
 
 ```bash
 npm run dev:https
