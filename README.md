@@ -98,6 +98,32 @@ Every "local service" here (Ollama, whisper.cpp, Automatic1111, ComfyUI) is
 optional independently — the app degrades gracefully with a clear inline
 error if one isn't running, rather than breaking anything else.
 
+## Quick setup (Windows, no command-line experience needed)
+
+Model files (the actual AI "brains") are multiple gigabytes each —
+`dolphin-mistral` alone is about 4 GB. GitHub hard-blocks any file over
+100 MB, so they can't be bundled into this repository; there's no way
+around that limit. What's included instead is a script that downloads them
+for you automatically, using Ollama's own downloader (which is built for
+exactly this, unlike Git):
+
+1. On this repo's GitHub page, click the green **Code** button →
+   **Download ZIP**, then extract it.
+2. Install [Node.js](https://nodejs.org) (LTS version) and
+   [Ollama](https://ollama.com) if you haven't already — both are quick
+   installers, click Next through the defaults.
+3. Double-click **`setup-windows.bat`** in the extracted folder. It
+   installs the app and downloads the required models automatically
+   (dolphin-mistral, the chat model, is the large one — this step needs a
+   decent internet connection and some patience).
+4. Once that finishes, double-click **`start-windows.bat`** any time you
+   want to run the app — it starts everything and opens your browser to
+   it automatically.
+
+That's the whole setup. Everything below explains what those scripts are
+doing under the hood, and covers Mac/Linux and the optional voice/image/
+video extras.
+
 ## Setup
 
 ### 1. Install Ollama
