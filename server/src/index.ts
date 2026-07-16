@@ -11,12 +11,16 @@ import { ensureSeedPersonas } from "./seedPersonas.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 5174);
+// Defaults to loopback-only. Set HOST=0.0.0.0 to also allow other devices
+// on your local network (e.g. testing from a phone) — never binds beyond
+// your own network either way.
+const HOST = process.env.HOST ?? "127.0.0.1";
 
 ensureSeedPersonas();
 
-// Local-only: bind to loopback and allow only the local dev/client origin.
-// Nothing here ever talks to anything beyond this machine. The generous
-// JSON limit is for base64 avatar/selfie images and full-store backups.
+// Local-only: nothing here ever talks to anything beyond your own machine
+// or local network. The generous JSON limit is for base64 avatar/selfie
+// images and full-store backups.
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.raw({ type: "audio/*", limit: "25mb" }));
@@ -33,6 +37,7 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, "127.0.0.1", () => {
-  console.log(`AI-GF server listening on http://127.0.0.1:${PORT} (loopback only)`);
+app.listen(PORT, HOST, () => {
+  const scope = HOST === "127.0.0.1" ? "loopback only" : "local network";
+  console.log(`Unlucid Mohini server listening on http://${HOST}:${PORT} (${scope})`);
 });

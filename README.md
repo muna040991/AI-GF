@@ -216,6 +216,32 @@ This starts the API server on port 5174 and the Vite dev server on port
 5173. Open http://127.0.0.1:5173, create a character, pick a local model,
 and start chatting.
 
+### Testing on your phone
+
+You can open the app from a phone on the same WiFi as your computer — no
+extra setup needed, `npm run dev` already allows it:
+
+1. Find your computer's local network address: on Windows, run `ipconfig`
+   and look for "IPv4 Address" (something like `192.168.1.23`); on
+   Mac/Linux, run `ifconfig` (or `ip addr`) and look for a similar address
+   under your WiFi adapter.
+2. Make sure your phone is on the **same WiFi network** as your computer.
+3. On your phone's browser, go to `http://<that address>:5173` — e.g.
+   `http://192.168.1.23:5173`.
+4. Your computer's firewall may prompt to allow the connection the first
+   time — allow it (it's your local network, not the internet).
+
+This never leaves your WiFi network — it's the same offline guarantee,
+just reachable from another device you own. **One caveat**: the mic button
+(voice input) needs a "secure context" (HTTPS or `localhost`), which a
+plain `http://192.168.x.x` address doesn't count as — most mobile browsers
+will silently block microphone access there. Text chat, images, and video
+all work fine over plain HTTP; only voice *input* is affected (voice
+*output* still works everywhere). If you need to test voice input on your
+phone specifically, you'd need to set up HTTPS for the dev server (e.g. a
+self-signed certificate) or a tunneling tool like Tailscale, which is
+beyond this basic setup.
+
 ### Production build
 
 ```bash
@@ -227,6 +253,10 @@ npm start   # serves the built API on 5174; serve client/dist with any static fi
 
 - All data lives in `data/store.json`. Delete it to reset everything, or use
   Settings → Export encrypted backup first to keep a copy.
+- `HOST` env var (default `127.0.0.1`, loopback-only) controls what the
+  **production** server (`npm start`) binds to. Set `HOST=0.0.0.0` for the
+  same local-network phone access described above; `npm run dev` already
+  allows this without any env var.
 - `OLLAMA_HOST` env var can point the server at a non-default Ollama address
   (still expected to be local/offline).
 - `EMBED_MODEL` env var (default `nomic-embed-text`) selects the embedding
