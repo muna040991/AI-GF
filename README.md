@@ -21,6 +21,9 @@ following your local laws for any content you generate.
 - **Voice input/output** — talk to the app with your mic (transcribed locally via
   whisper.cpp) and have replies read back out loud (via the browser's built-in,
   on-device speech synthesis), with a distinct voice per character
+- **Starter character** — ships with one example persona (Yamuna) pre-seeded on
+  first run, so it's not a blank slate; edit or delete her like any other
+  character (`server/src/seedPersonas.ts`)
 
 ## Architecture
 

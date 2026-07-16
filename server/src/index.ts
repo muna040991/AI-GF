@@ -4,9 +4,12 @@ import { conversationsRouter } from "./routes/conversations.js";
 import { modelsRouter } from "./routes/models.js";
 import { personasRouter } from "./routes/personas.js";
 import { transcribeRouter } from "./routes/transcribe.js";
+import { ensureSeedPersonas } from "./seedPersonas.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 5174);
+
+ensureSeedPersonas();
 
 // Local-only: bind to loopback and allow only the local dev/client origin.
 // Nothing here ever talks to anything beyond this machine.

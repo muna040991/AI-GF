@@ -101,7 +101,13 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
       .slice(-HISTORY_WINDOW);
 
     const relevantMemories = await retrieveRelevantMemories(persona.id, content);
-    let systemPrompt = persona.systemPrompt;
+    const today = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date());
+    let systemPrompt = `${persona.systemPrompt}\n\nToday's date is ${today}.`;
     if (relevantMemories.length > 0) {
       systemPrompt +=
         "\n\nThings you remember about this user from past conversations:\n" +
