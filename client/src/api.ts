@@ -239,12 +239,16 @@ export async function sendMessageStream(
   handlers: StreamHandlers,
   images?: string[]
 ): Promise<void> {
-  const res = await fetch(`/api/conversations/${conversationId}/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, images }),
-  });
-  await readSseStream(res, handlers);
+  try {
+    const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, images }),
+    });
+    await readSseStream(res, handlers);
+  } catch {
+    handlers.onError("Could not reach the app's server. Is it still running?");
+  }
 }
 
 /** Regenerates the most recent assistant message, streaming the new variant. */
@@ -253,8 +257,12 @@ export async function regenerateMessageStream(
   messageId: string,
   handlers: StreamHandlers
 ): Promise<void> {
-  const res = await fetch(`/api/conversations/${conversationId}/messages/${messageId}/regenerate`, {
-    method: "POST",
-  });
-  await readSseStream(res, handlers);
+  try {
+    const res = await fetch(`/api/conversations/${conversationId}/messages/${messageId}/regenerate`, {
+      method: "POST",
+    });
+    await readSseStream(res, handlers);
+  } catch {
+    handlers.onError("Could not reach the app's server. Is it still running?");
+  }
 }

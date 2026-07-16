@@ -6,7 +6,7 @@ interface Props {
   persona: Persona | null;
   availableModels: OllamaModel[];
   onCancel: () => void;
-  onSave: (data: Omit<Persona, "id" | "createdAt">) => void;
+  onSave: (data: Omit<Persona, "id" | "createdAt">) => void | Promise<void>;
 }
 
 const DEFAULT_SYSTEM_PROMPT =
@@ -31,6 +31,7 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
   const [galleryImages, setGalleryImages] = useState<string[]>(persona?.galleryImages ?? []);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     getVoices().then(setVoices);
@@ -100,21 +101,41 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !systemPrompt.trim() || !model) return;
-    onSave({
-      name: name.trim(),
-      systemPrompt: systemPrompt.trim(),
-      model,
-      avatarColor,
-      voiceURI: voiceURI || undefined,
-      avatarImage: avatarImage || undefined,
-      appearance: appearance.trim() || undefined,
-      styleReferenceImage: styleReferenceImage || undefined,
-      temperature: temperature.trim() ? Number(temperature) : undefined,
-      maxTokens: maxTokens.trim() ? Number(maxTokens) : undefined,
-    });
+    if (!name.trim()) {
+      setFormError("Give this character a name.");
+      return;
+    }
+    if (!systemPrompt.trim()) {
+      setFormError("Persona / system prompt can't be empty.");
+      return;
+    }
+    if (!model.trim()) {
+      setFormError(
+        availableModels.length === 0
+          ? "Type the exact name of a model you've pulled in Ollama (e.g. dolphin-mistral). The model list couldn't be loaded — is Ollama running?"
+          : "Pick a model."
+      );
+      return;
+    }
+    setFormError(null);
+    try {
+      await onSave({
+        name: name.trim(),
+        systemPrompt: systemPrompt.trim(),
+        model,
+        avatarColor,
+        voiceURI: voiceURI || undefined,
+        avatarImage: avatarImage || undefined,
+        appearance: appearance.trim() || undefined,
+        styleReferenceImage: styleReferenceImage || undefined,
+        temperature: temperature.trim() ? Number(temperature) : undefined,
+        maxTokens: maxTokens.trim() ? Number(maxTokens) : undefined,
+      });
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not save this character.");
+    }
   }
 
   return (
@@ -287,6 +308,8 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
             <span className="hint">Speech synthesis isn't supported in this browser.</span>
           )}
         </label>
+
+        {formError && <p className="hint form-error">{formError}</p>}
 
         <div className="modal-actions">
           <button type="button" onClick={onCancel}>

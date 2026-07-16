@@ -484,7 +484,11 @@ export function ChatWindow({ persona, conversationId }: Props) {
           }
           rows={2}
         />
-        <button onClick={handleSend} disabled={sending || (!draft.trim() && pendingImages.length === 0)}>
+        <button
+          className="send-btn"
+          onClick={handleSend}
+          disabled={sending || (!draft.trim() && pendingImages.length === 0)}
+        >
           Send
         </button>
       </div>

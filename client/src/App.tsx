@@ -39,15 +39,24 @@ export default function App() {
       setSelectedConversationId(null);
       return;
     }
-    api.listConversations(selectedPersonaId).then((list) => {
-      setConversations(list);
+    api.listConversations(selectedPersonaId).then(async (list) => {
       const desired = pendingConversationId.current;
       pendingConversationId.current = null;
       if (desired && list.some((c) => c.id === desired)) {
+        setConversations(list);
         setSelectedConversationId(desired);
-      } else {
-        setSelectedConversationId(list[0]?.id ?? null);
+        return;
       }
+      if (list.length === 0) {
+        // First time chatting with this character — start a conversation
+        // automatically instead of leaving the user on an empty screen.
+        const conversation = await api.createConversation(selectedPersonaId, "New conversation");
+        setConversations([conversation]);
+        setSelectedConversationId(conversation.id);
+        return;
+      }
+      setConversations(list);
+      setSelectedConversationId(list[0].id);
     });
   }, [selectedPersonaId]);
 
