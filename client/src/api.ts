@@ -4,6 +4,7 @@ export interface Persona {
   systemPrompt: string;
   model: string;
   avatarColor: string;
+  voiceURI?: string;
   createdAt: number;
 }
 
@@ -66,6 +67,16 @@ export const api = {
 
   listMessages: (conversationId: string) =>
     fetch(`/api/conversations/${conversationId}/messages`).then((r) => json<Message[]>(r)),
+
+  transcribe: async (blob: Blob): Promise<string> => {
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": blob.type || "audio/webm" },
+      body: blob,
+    });
+    const data = await json<{ text: string }>(res);
+    return data.text;
+  },
 };
 
 interface StreamHandlers {

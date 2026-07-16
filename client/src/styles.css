@@ -181,6 +181,15 @@ body {
   color: var(--text-dim);
 }
 
+.speak-toggle {
+  margin-left: auto;
+  font-size: 18px;
+}
+
+.speak-toggle.active {
+  background: var(--panel-2);
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -191,12 +200,34 @@ body {
 }
 
 .bubble {
+  position: relative;
   max-width: 70%;
   padding: 10px 14px;
   border-radius: 14px;
   white-space: pre-wrap;
   line-height: 1.4;
   font-size: 14px;
+}
+
+.speak-btn {
+  display: none;
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble.assistant:hover .speak-btn {
+  display: flex;
 }
 
 .bubble.user {
@@ -250,6 +281,33 @@ body {
 .chat-input button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.chat-input .mic-btn {
+  width: 42px;
+  padding: 0;
+  flex-shrink: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 16px;
+}
+
+.chat-input .mic-btn.recording {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
 }
 
 .modal-backdrop {

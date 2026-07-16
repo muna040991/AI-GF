@@ -10,7 +10,7 @@ personasRouter.get("/", (_req, res) => {
 });
 
 personasRouter.post("/", (req, res) => {
-  const { name, systemPrompt, model, avatarColor } = req.body ?? {};
+  const { name, systemPrompt, model, avatarColor, voiceURI } = req.body ?? {};
   if (!name || !systemPrompt || !model) {
     res.status(400).json({ error: "name, systemPrompt and model are required" });
     return;
@@ -22,6 +22,7 @@ personasRouter.post("/", (req, res) => {
     systemPrompt,
     model,
     avatarColor: avatarColor || "#8b5cf6",
+    voiceURI: voiceURI || undefined,
     createdAt: Date.now(),
   };
   db.mutate((s) => s.personas.push(persona));
@@ -33,11 +34,12 @@ personasRouter.put("/:id", (req, res) => {
   const updated = db.mutate((s) => {
     const persona = s.personas.find((p) => p.id === id);
     if (!persona) return null;
-    const { name, systemPrompt, model, avatarColor } = req.body ?? {};
+    const { name, systemPrompt, model, avatarColor, voiceURI } = req.body ?? {};
     if (name !== undefined) persona.name = name;
     if (systemPrompt !== undefined) persona.systemPrompt = systemPrompt;
     if (model !== undefined) persona.model = model;
     if (avatarColor !== undefined) persona.avatarColor = avatarColor;
+    if (voiceURI !== undefined) persona.voiceURI = voiceURI || undefined;
     return persona;
   });
 

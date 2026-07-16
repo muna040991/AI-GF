@@ -18,6 +18,9 @@ following your local laws for any content you generate.
   recalls the relevant ones (via local embeddings) in later chats with that character
 - **Multiple characters/models** — switch between saved personas, each can use a
   different local model
+- **Voice input/output** — talk to the app with your mic (transcribed locally via
+  whisper.cpp) and have replies read back out loud (via the browser's built-in,
+  on-device speech synthesis), with a distinct voice per character
 
 ## Architecture
 
@@ -25,12 +28,21 @@ following your local laws for any content you generate.
 client/  React + Vite UI  (http://127.0.0.1:5173)
 server/  Express API      (http://127.0.0.1:5174, loopback only)
            |
-           v
-        Ollama          (http://127.0.0.1:11434)
+           +--> Ollama            (http://127.0.0.1:11434)  chat + embeddings
+           |
+           +--> whisper.cpp server (http://127.0.0.1:8081)  speech-to-text
 ```
 
-The Express server is the only thing that talks to Ollama; the browser only
-ever talks to the Express server. Both are bound to loopback.
+The Express server is the only thing that talks to Ollama or whisper.cpp; the
+browser only ever talks to the Express server. All three are bound to
+loopback. Voice *output* (text-to-speech) needs no server at all — it uses
+the browser's built-in `speechSynthesis`, which runs on-device.
+
+Note: voice input deliberately does **not** use the browser's built-in
+`SpeechRecognition` API — in Chrome/Edge that quietly sends your audio to
+Google's servers for transcription, which would break the offline guarantee
+this app is built around. Recorded audio is instead transcribed locally via
+whisper.cpp.
 
 ## Setup
 
@@ -63,7 +75,25 @@ ollama pull nomic-embed-text
 If you skip this, the app still works fine — memory retrieval just quietly
 returns nothing until embeddings are available.
 
-### 4. Install and run the app
+### 4. (Optional) Set up local voice input
+
+Voice *output* (text-to-speech) works out of the box with no setup — it's
+built into your browser. Voice *input* (speech-to-text) needs a local
+whisper.cpp server:
+
+```bash
+git clone https://github.com/ggerganov/whisper.cpp
+cd whisper.cpp
+sh ./models/download-ggml-model.sh base.en   # or a larger model for more accuracy
+cmake -B build && cmake --build build -j --config Release
+./build/bin/whisper-server -m models/ggml-base.en.bin --port 8081
+```
+
+Leave that running in the background. If you skip this step, the app still
+works fine — the mic button will just show a "couldn't reach Whisper"
+error, and you can keep typing as usual.
+
+### 5. Install and run the app
 
 ```bash
 npm install
@@ -88,3 +118,10 @@ npm start   # serves the built API on 5174; serve client/dist with any static fi
   (still expected to be local/offline).
 - `EMBED_MODEL` env var (default `nomic-embed-text`) selects the embedding
   model used for memory retrieval.
+- `WHISPER_HOST` env var (default `http://127.0.0.1:8081`) points at your
+  local whisper.cpp server for voice input.
+- Voice output uses whichever system/browser voices are installed. Pick a
+  per-character voice in the persona editor, or leave it on "Browser default".
+- The mic button records with `MediaRecorder`; browsers require a secure
+  context (`http://127.0.0.1` counts, `http://<lan-ip>` does not) to grant
+  microphone access.

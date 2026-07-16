@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { OllamaModel, Persona } from "../api.js";
+import { getVoices, isSpeechSynthesisSupported } from "../tts.js";
 
 interface Props {
   persona: Persona | null;
@@ -20,11 +21,17 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
   const [systemPrompt, setSystemPrompt] = useState(persona?.systemPrompt ?? DEFAULT_SYSTEM_PROMPT);
   const [model, setModel] = useState(persona?.model ?? availableModels[0]?.name ?? "");
   const [avatarColor, setAvatarColor] = useState(persona?.avatarColor ?? COLORS[0]);
+  const [voiceURI, setVoiceURI] = useState(persona?.voiceURI ?? "");
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    getVoices().then(setVoices);
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !systemPrompt.trim() || !model) return;
-    onSave({ name: name.trim(), systemPrompt: systemPrompt.trim(), model, avatarColor });
+    onSave({ name: name.trim(), systemPrompt: systemPrompt.trim(), model, avatarColor, voiceURI: voiceURI || undefined });
   }
 
   return (
@@ -74,6 +81,22 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
               />
             ))}
           </div>
+        </label>
+
+        <label>
+          Voice (spoken replies)
+          {isSpeechSynthesisSupported() ? (
+            <select value={voiceURI} onChange={(e) => setVoiceURI(e.target.value)}>
+              <option value="">Browser default</option>
+              {voices.map((v) => (
+                <option key={v.voiceURI} value={v.voiceURI}>
+                  {v.name} ({v.lang})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="hint">Speech synthesis isn't supported in this browser.</span>
+          )}
         </label>
 
         <div className="modal-actions">

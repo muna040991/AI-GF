@@ -4,6 +4,8 @@ export interface Persona {
   systemPrompt: string;
   model: string;
   avatarColor: string;
+  /** Browser SpeechSynthesisVoice.voiceURI used for this persona's spoken replies, if set. */
+  voiceURI?: string;
   createdAt: number;
 }
 
