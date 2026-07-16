@@ -82,54 +82,59 @@ export function Sidebar({
         </div>
         {modelsError && <p className="warning">Ollama unreachable: {modelsError}</p>}
         <ul className="list">
-          {personas.map((persona) => (
-            <li
-              key={persona.id}
-              className={`list-item ${persona.id === selectedPersonaId ? "active" : ""}`}
-              onClick={() => onSelectPersona(persona.id)}
-            >
-              {persona.avatarImage ? (
-                <img src={persona.avatarImage} alt="" className="avatar-img small" />
-              ) : (
-                <span className="avatar-dot" style={{ background: persona.avatarColor }} />
-              )}
-              <span className="list-item-label">{persona.name}</span>
-              <span className="list-item-actions">
-                <button
-                  className="icon-btn small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onExportPersona(persona);
-                  }}
-                  title="Export character card"
-                >
-                  ⇩
-                </button>
-                <button
-                  className="icon-btn small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditPersona(persona);
-                  }}
-                  title="Edit"
-                >
-                  ✎
-                </button>
-                <button
-                  className="icon-btn small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Delete ${persona.name} and all their conversations?`)) {
-                      onDeletePersona(persona.id);
-                    }
-                  }}
-                  title="Delete"
-                >
-                  ×
-                </button>
-              </span>
-            </li>
-          ))}
+          {personas.map((persona) => {
+            const hasImage = Boolean(persona.avatarImage);
+            return (
+              <li
+                key={persona.id}
+                className={`persona-card ${!hasImage ? "persona-card-placeholder" : ""} ${
+                  persona.id === selectedPersonaId ? "active" : ""
+                }`}
+                style={hasImage ? { backgroundImage: `url(${persona.avatarImage})` } : undefined}
+                onClick={() => onSelectPersona(persona.id)}
+              >
+                {!hasImage && <span className="persona-card-letter">{persona.name[0]?.toUpperCase()}</span>}
+                <span className="persona-card-info">
+                  <div className="persona-card-name">{persona.name}</div>
+                  <div className="persona-card-tag">{persona.model}</div>
+                </span>
+                <span className="persona-card-actions">
+                  <button
+                    className="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onExportPersona(persona);
+                    }}
+                    title="Export character card"
+                  >
+                    ⇩
+                  </button>
+                  <button
+                    className="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditPersona(persona);
+                    }}
+                    title="Edit"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    className="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete ${persona.name} and all their conversations?`)) {
+                        onDeletePersona(persona.id);
+                      }
+                    }}
+                    title="Delete"
+                  >
+                    ×
+                  </button>
+                </span>
+              </li>
+            );
+          })}
           {personas.length === 0 && <li className="hint">No characters yet — click + to create one.</li>}
         </ul>
       </div>

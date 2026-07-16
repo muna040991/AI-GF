@@ -273,19 +273,19 @@ export function ChatWindow({ persona, conversationId }: Props) {
   const visibleMessages = showPinnedOnly ? messages.filter((m) => m.pinned) : messages;
   const lastMessageId = messages[messages.length - 1]?.id;
 
+  const heroImage = persona.avatarImage;
+
   return (
     <div className="chat-window">
-      <div className="chat-header">
-        {persona.avatarImage ? (
-          <img src={persona.avatarImage} alt="" className="avatar-img" />
-        ) : (
-          <span className="avatar-dot" style={{ background: persona.avatarColor }} />
-        )}
-        <div>
+      <div
+        className={`chat-hero ${!heroImage ? "chat-hero-placeholder" : ""}`}
+        style={heroImage ? { backgroundImage: `url(${heroImage})` } : undefined}
+      >
+        <div className="chat-hero-info">
           <div className="chat-title">{persona.name}</div>
           <div className="chat-subtitle">{persona.model}</div>
         </div>
-        <div className="chat-header-actions">
+        <div className="chat-hero-actions">
           <button
             className={`icon-btn ${showPinnedOnly ? "active" : ""}`}
             onClick={() => setShowPinnedOnly((v) => !v)}
@@ -304,7 +304,7 @@ export function ChatWindow({ persona, conversationId }: Props) {
             📞
           </button>
           <button
-            className={`icon-btn speak-toggle ${autoSpeak ? "active" : ""}`}
+            className={`icon-btn ${autoSpeak ? "active" : ""}`}
             onClick={toggleAutoSpeak}
             title={autoSpeak ? "Auto-speak replies: on" : "Auto-speak replies: off"}
           >
@@ -321,7 +321,14 @@ export function ChatWindow({ persona, conversationId }: Props) {
           const hasVariants = (message.variants?.length ?? 0) > 1;
 
           return (
-            <div key={message.id} className={`bubble ${message.role}`}>
+            <div key={message.id} className={`msg-row ${message.role}`}>
+              {message.role === "assistant" &&
+                (persona.avatarImage ? (
+                  <img src={persona.avatarImage} alt="" className="msg-row-avatar" />
+                ) : (
+                  <span className="msg-row-avatar-placeholder">{persona.name[0]?.toUpperCase()}</span>
+                ))}
+              <div className={`bubble ${message.role}`}>
               {message.images?.map((img, i) => <img key={i} src={img} alt="" className="msg-image" />)}
               {message.video && <video src={message.video} controls loop className="msg-video" />}
 
@@ -384,12 +391,32 @@ export function ChatWindow({ persona, conversationId }: Props) {
                   )}
                 </div>
               )}
+              </div>
             </div>
           );
         })}
-        {streamingText !== null && <div className="bubble assistant">{renderMarkdown(streamingText || "…")}</div>}
-        {generatingImage && <div className="bubble assistant">*generating a photo…* 📷</div>}
-        {generatingVideo && <div className="bubble assistant">*animating a video, this can take a while…* 🎬</div>}
+        {streamingText !== null && (
+          <div className="msg-row assistant">
+            {persona.avatarImage ? (
+              <img src={persona.avatarImage} alt="" className="msg-row-avatar" />
+            ) : (
+              <span className="msg-row-avatar-placeholder">{persona.name[0]?.toUpperCase()}</span>
+            )}
+            <div className="bubble assistant">{renderMarkdown(streamingText || "…")}</div>
+          </div>
+        )}
+        {generatingImage && (
+          <div className="msg-row assistant">
+            <span className="msg-row-avatar-placeholder">{persona.name[0]?.toUpperCase()}</span>
+            <div className="bubble assistant">*generating a photo…* 📷</div>
+          </div>
+        )}
+        {generatingVideo && (
+          <div className="msg-row assistant">
+            <span className="msg-row-avatar-placeholder">{persona.name[0]?.toUpperCase()}</span>
+            <div className="bubble assistant">*animating a video, this can take a while…* 🎬</div>
+          </div>
+        )}
         {error && <div className="bubble error">{error}</div>}
         {recorder.error && <div className="bubble error">{recorder.error}</div>}
         <div ref={bottomRef} />
