@@ -2,6 +2,8 @@ export interface Persona {
   id: string;
   name: string;
   systemPrompt: string;
+  /** "ollama" (default/unset) = local, offline. "openrouter" = sends this character's chats to OpenRouter's cloud API. */
+  provider?: "ollama" | "openrouter";
   model: string;
   avatarColor: string;
   voiceURI?: string;

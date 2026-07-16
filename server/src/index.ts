@@ -1,4 +1,7 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
+import { config as loadEnvFile } from "dotenv";
 import express from "express";
 import { backupRouter } from "./routes/backup.js";
 import { conversationsRouter } from "./routes/conversations.js";
@@ -8,6 +11,14 @@ import { personasRouter } from "./routes/personas.js";
 import { searchRouter } from "./routes/search.js";
 import { transcribeRouter } from "./routes/transcribe.js";
 import { ensureSeedPersonas } from "./seedPersonas.js";
+
+// Loads a .env file from the project root (two levels up from this
+// compiled file: server/dist/index.js -> server -> root), if one exists —
+// e.g. OPENROUTER_API_KEY, so it doesn't need to be retyped every launch.
+// Nothing here reads that key or sends anything anywhere on its own; it's
+// only used if you explicitly set a persona's provider to "openrouter".
+const __dirname = dirname(fileURLToPath(import.meta.url));
+loadEnvFile({ path: join(__dirname, "..", "..", ".env") });
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 5174);

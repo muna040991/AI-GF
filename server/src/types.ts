@@ -2,6 +2,15 @@ export interface Persona {
   id: string;
   name: string;
   systemPrompt: string;
+  /**
+   * Which backend runs this character's chat. "ollama" (default, also used
+   * when unset) talks to your local Ollama daemon — nothing leaves your
+   * machine. "openrouter" sends chat requests to OpenRouter's cloud API
+   * instead, using the server's OPENROUTER_API_KEY env var; this is an
+   * explicit opt-out of the app's local-only guarantee, per-character.
+   */
+  provider?: "ollama" | "openrouter";
+  /** Model identifier — an Ollama tag (e.g. "dolphin-mistral") or, for provider "openrouter", an OpenRouter model id (e.g. "cognitivecomputations/dolphin-mixtral-8x7b"). */
   model: string;
   avatarColor: string;
   /** Browser SpeechSynthesisVoice.voiceURI used for this persona's spoken replies, if set. */

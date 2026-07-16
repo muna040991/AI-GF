@@ -19,6 +19,7 @@ const COLORS = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444"
 export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Props) {
   const [name, setName] = useState(persona?.name ?? "");
   const [systemPrompt, setSystemPrompt] = useState(persona?.systemPrompt ?? DEFAULT_SYSTEM_PROMPT);
+  const [provider, setProvider] = useState<"ollama" | "openrouter">(persona?.provider ?? "ollama");
   const [model, setModel] = useState(persona?.model ?? availableModels[0]?.name ?? "");
   const [avatarColor, setAvatarColor] = useState(persona?.avatarColor ?? COLORS[0]);
   const [voiceURI, setVoiceURI] = useState(persona?.voiceURI ?? "");
@@ -113,9 +114,11 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
     }
     if (!model.trim()) {
       setFormError(
-        availableModels.length === 0
-          ? "Type the exact name of a model you've pulled in Ollama (e.g. dolphin-mistral). The model list couldn't be loaded — is Ollama running?"
-          : "Pick a model."
+        provider === "openrouter"
+          ? "Type an OpenRouter model id (e.g. nvidia/nemotron-nano-9b-v2:free)."
+          : availableModels.length === 0
+            ? "Type the exact name of a model you've pulled in Ollama (e.g. dolphin-mistral). The model list couldn't be loaded — is Ollama running?"
+            : "Pick a model."
       );
       return;
     }
@@ -124,6 +127,7 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
       await onSave({
         name: name.trim(),
         systemPrompt: systemPrompt.trim(),
+        provider: provider === "openrouter" ? "openrouter" : undefined,
         model,
         avatarColor,
         voiceURI: voiceURI || undefined,
@@ -166,23 +170,62 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
         </label>
 
         <label>
-          Model (from local Ollama)
-          {availableModels.length > 0 ? (
-            <select value={model} onChange={(e) => setModel(e.target.value)}>
-              {availableModels.map((m) => (
-                <option key={m.name} value={m.name}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="e.g. dolphin-mistral"
-            />
-          )}
+          Where does this character's brain run?
+          <select
+            value={provider}
+            onChange={(e) => {
+              const next = e.target.value === "openrouter" ? "openrouter" : "ollama";
+              setProvider(next);
+              // Model ids don't carry over between providers (an Ollama tag
+              // isn't a valid OpenRouter id and vice versa) — clear it so a
+              // stale value from the other provider can't get saved by accident.
+              if (next !== (persona?.provider ?? "ollama")) setModel("");
+            }}
+          >
+            <option value="ollama">Local (Ollama) — fully offline, default</option>
+            <option value="openrouter">Online (OpenRouter) — sends this character's chats to a cloud API</option>
+          </select>
         </label>
+
+        {provider === "openrouter" ? (
+          <>
+            <p className="hint form-error">
+              This character's chat messages will be sent to OpenRouter's servers, not processed locally —
+              this is an explicit exception to the app's offline guarantee, for this character only. Requires
+              OPENROUTER_API_KEY set in a .env file (see README).
+            </p>
+            <label>
+              OpenRouter model id
+              <input
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="e.g. nvidia/nemotron-nano-9b-v2:free"
+              />
+              <span className="hint">
+                Find model ids (including free ones, tagged ":free") at openrouter.ai/models.
+              </span>
+            </label>
+          </>
+        ) : (
+          <label>
+            Model (from local Ollama)
+            {availableModels.length > 0 ? (
+              <select value={model} onChange={(e) => setModel(e.target.value)}>
+                {availableModels.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="e.g. dolphin-mistral"
+              />
+            )}
+          </label>
+        )}
 
         <div className="field-row">
           <label>

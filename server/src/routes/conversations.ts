@@ -2,7 +2,8 @@ import { Router, type Response } from "express";
 import { nanoid } from "nanoid";
 import { ComfyUIError, generateVideo } from "../comfyUI.js";
 import { db } from "../db.js";
-import { chatStream, OllamaError, toRawBase64, type ChatMessage } from "../ollama.js";
+import { chatStreamForPersona, isProviderError } from "../llm.js";
+import { toRawBase64, type ChatMessage } from "../ollama.js";
 import { maybeExtractMemory, retrieveRelevantMemories } from "../memory.js";
 import { generateImage, StableDiffusionError } from "../stableDiffusion.js";
 import type { Conversation, Message, Persona } from "../types.js";
@@ -33,9 +34,9 @@ function toChatMessage(m: Message): ChatMessage {
   };
 }
 
-/** True if the Ollama error indicates the model doesn't support image input. */
+/** True if the provider's error indicates the model doesn't support image input. */
 function isUnsupportedMultimodalError(err: unknown): boolean {
-  return err instanceof OllamaError && /multimodal/i.test(err.message);
+  return isProviderError(err) && /multimodal/i.test(err.message);
 }
 
 function stripImages(messages: ChatMessage[]): ChatMessage[] {
@@ -51,16 +52,16 @@ function stripImages(messages: ChatMessage[]): ChatMessage[] {
  * of leaving the conversation permanently broken.
  */
 async function chatStreamWithVisionFallback(
-  model: string,
+  persona: Pick<Persona, "provider" | "model">,
   messages: ChatMessage[],
   onToken: (chunk: string) => void,
   options?: { temperature?: number; maxTokens?: number }
 ): Promise<string> {
   try {
-    return await chatStream(model, messages, onToken, options);
+    return await chatStreamForPersona(persona, messages, onToken, options);
   } catch (err) {
     if (!isUnsupportedMultimodalError(err)) throw err;
-    return chatStream(model, stripImages(messages), onToken, options);
+    return chatStreamForPersona(persona, stripImages(messages), onToken, options);
   }
 }
 
@@ -346,7 +347,7 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
     ];
 
     const fullReply = await chatStreamWithVisionFallback(
-      persona.model,
+      persona,
       chatMessages,
       (chunk) => send("token", { chunk }),
       { temperature: persona.temperature, maxTokens: persona.maxTokens }
@@ -364,13 +365,18 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
     send("done", { message: assistantMessage });
     res.end();
 
-    void maybeExtractMemory(
-      persona.id,
-      persona.model,
-      history.map((m) => ({ role: m.role, content: m.content }) as ChatMessage)
-    );
+    if (persona.provider !== "openrouter") {
+      // Memory extraction/embedding always runs against local Ollama,
+      // regardless of which provider handles this persona's chat replies —
+      // best-effort and already fails soft if Ollama isn't reachable.
+      void maybeExtractMemory(
+        persona.id,
+        persona.model,
+        history.map((m) => ({ role: m.role, content: m.content }) as ChatMessage)
+      );
+    }
   } catch (err) {
-    const message = err instanceof OllamaError ? err.message : "Unexpected error talking to the model.";
+    const message = isProviderError(err) ? err.message : "Unexpected error talking to the model.";
     send("error", { message });
     res.end();
   }
@@ -413,7 +419,7 @@ conversationsRouter.post("/:id/messages/:messageId/regenerate", async (req, res)
     ];
 
     const fullReply = await chatStreamWithVisionFallback(
-      persona.model,
+      persona,
       chatMessages,
       (chunk) => send("token", { chunk }),
       { temperature: persona.temperature, maxTokens: persona.maxTokens }
@@ -433,7 +439,7 @@ conversationsRouter.post("/:id/messages/:messageId/regenerate", async (req, res)
     send("done", { message: updated });
     res.end();
   } catch (err) {
-    const message = err instanceof OllamaError ? err.message : "Unexpected error talking to the model.";
+    const message = isProviderError(err) ? err.message : "Unexpected error talking to the model.";
     send("error", { message });
     res.end();
   }

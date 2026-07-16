@@ -112,7 +112,14 @@ export function Sidebar({
               >
                 {!hasImage && <span className="persona-card-letter">{persona.name[0]?.toUpperCase()}</span>}
                 <span className="persona-card-info">
-                  <div className="persona-card-name">{persona.name}</div>
+                  <div className="persona-card-name">
+                    {persona.name}
+                    {persona.provider === "openrouter" && (
+                      <span className="persona-card-badge" title="This character's chat runs online via OpenRouter">
+                        ☁ online
+                      </span>
+                    )}
+                  </div>
                   <div className="persona-card-tag">{persona.model}</div>
                 </span>
                 <span className="persona-card-actions">

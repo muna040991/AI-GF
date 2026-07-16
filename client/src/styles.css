@@ -184,6 +184,17 @@ body {
   opacity: 0.85;
 }
 
+.persona-card-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.85);
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .persona-card-actions {
   position: absolute;
   top: 8px;

@@ -10,6 +10,7 @@ export const personasRouter = Router();
 const EDITABLE_FIELDS = [
   "name",
   "systemPrompt",
+  "provider",
   "model",
   "avatarColor",
   "voiceURI",
@@ -19,6 +20,10 @@ const EDITABLE_FIELDS = [
   "appearance",
   "styleReferenceImage",
 ] as const;
+
+function toProvider(value: unknown): Persona["provider"] {
+  return value === "openrouter" ? "openrouter" : undefined;
+}
 
 function toClientMemory(m: Memory) {
   const { embedding: _embedding, ...rest } = m;
@@ -33,6 +38,7 @@ personasRouter.post("/", (req, res) => {
   const {
     name,
     systemPrompt,
+    provider,
     model,
     avatarColor,
     voiceURI,
@@ -51,6 +57,7 @@ personasRouter.post("/", (req, res) => {
     id: nanoid(),
     name,
     systemPrompt,
+    provider: toProvider(provider),
     model,
     avatarColor: avatarColor || "#8b5cf6",
     voiceURI: voiceURI || undefined,

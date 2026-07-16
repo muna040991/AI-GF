@@ -34,6 +34,7 @@ export function exportPersonaAsCard(persona: Persona) {
       character_version: "1.0",
       extensions: {
         aigf: {
+          provider: persona.provider,
           model: persona.model,
           avatarColor: persona.avatarColor,
           voiceURI: persona.voiceURI,
@@ -84,6 +85,7 @@ export function importCharacterCard(raw: unknown): SeedPersona {
   return {
     name: name.trim(),
     systemPrompt,
+    provider: aigf.provider === "openrouter" ? "openrouter" : undefined,
     model: typeof aigf.model === "string" ? aigf.model : "dolphin-mistral",
     avatarColor: typeof aigf.avatarColor === "string" ? aigf.avatarColor : "#8b5cf6",
     voiceURI: typeof aigf.voiceURI === "string" ? aigf.voiceURI : undefined,

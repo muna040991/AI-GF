@@ -1,9 +1,15 @@
 # Unlucid Mohini
 
-A fully offline, local-only AI chat companion. The app itself never makes a
-network call — all inference runs through local services on `127.0.0.1`
-([Ollama](https://ollama.com) for chat, and optional local servers for voice
-and images), so conversations never leave your machine.
+A fully offline, local-only AI chat companion by default. The app itself
+never makes a network call — all inference runs through local services on
+`127.0.0.1` ([Ollama](https://ollama.com) for chat, and optional local
+servers for voice and images), so conversations never leave your machine.
+
+Each character can optionally be switched, individually, to run its chat
+through [OpenRouter](https://openrouter.ai) (a cloud API) instead of local
+Ollama — this is an explicit, per-character opt-out of the offline
+guarantee above, not the default. See
+[Using an online API (OpenRouter) for a character](#using-an-online-api-openrouter-for-a-character).
 
 It doesn't add any of its own content filtering on top of the model — the
 character's tone and boundaries come entirely from the persona's system
@@ -25,6 +31,8 @@ following your local laws for any content you generate. Characters must be
 **Characters**
 - Custom personas: name, system prompt, model, color, and an **avatar image**
 - Per-persona **model settings** — temperature and max reply length
+- Per-persona **provider**: local Ollama (default) or an online API
+  (OpenRouter) — see the setup section below
 - **Long-term memory**: periodically distills durable facts from a
   conversation and recalls the relevant ones (via local embeddings) in later
   chats — with a viewer/editor to see, add, or delete what's remembered
@@ -80,13 +88,17 @@ server/  Express API           (http://127.0.0.1:5174, loopback only)
            +--> Automatic1111       (http://127.0.0.1:7860)   image generation
            |
            +--> ComfyUI             (http://127.0.0.1:8188)   image-to-video
+           |
+           +--> OpenRouter (cloud)  only for characters explicitly set to
+                                    provider "openrouter" — every other
+                                    path above stays local/offline
 ```
 
 The Express server is the only thing that talks to Ollama, whisper.cpp,
-Automatic1111, or ComfyUI; the browser only ever talks to the Express server.
-All of them are bound to loopback. Voice *output* (text-to-speech) needs no
-server at all — it uses the browser's built-in `speechSynthesis`, which runs
-on-device.
+Automatic1111, ComfyUI, or OpenRouter; the browser only ever talks to the
+Express server. Every local service is bound to loopback. Voice *output*
+(text-to-speech) needs no server at all — it uses the browser's built-in
+`speechSynthesis`, which runs on-device.
 
 Note: voice input deliberately does **not** use the browser's built-in
 `SpeechRecognition` API — in Chrome/Edge that quietly sends your audio to
@@ -303,6 +315,46 @@ you'll need to point `ckpt_name`/`clip_name` at checkpoints you actually have
 installed before it'll run. Skipping this whole step just makes the 🎬
 Animate button show a clear "couldn't reach ComfyUI" (or "no workflow
 configured") error instead of breaking anything else.
+
+### Using an online API (OpenRouter) for a character
+
+Everything above is local. This is the one deliberate exception: any
+character can be switched, individually, to run its chat through
+[OpenRouter](https://openrouter.ai) — a cloud API — instead of your local
+Ollama. **Understand what this means before turning it on**: that
+character's messages are sent to and processed by a third-party server,
+not your own machine. Text chat only (not memory extraction, images, or
+video) is affected, and only for characters you explicitly switch.
+
+1. Create a key at https://openrouter.ai/keys.
+2. In the project root (next to `README.md`), copy `.env.example` to a new
+   file named `.env`, and paste your key in:
+   ```
+   OPENROUTER_API_KEY=sk-or-v1-...
+   ```
+   `.env` is gitignored — it never gets committed, and the app only reads
+   it locally. **Never paste a real key into a chat, issue, or commit** —
+   treat any key that's been pasted somewhere outside your own `.env` file
+   as compromised and regenerate it.
+3. Restart the app (`npm run dev` / `start-windows.bat`) so it picks up the
+   new `.env` file.
+4. In a character's editor, change "Where does this character's brain
+   run?" to **Online (OpenRouter)**, and enter an OpenRouter model id (not
+   an Ollama tag) — e.g. `nvidia/nemotron-nano-9b-v2:free`. Browse model
+   ids, including free ones (tagged `:free`), at
+   https://openrouter.ai/models. Characters using this provider show a
+   ☁ online badge in the sidebar.
+
+Notes:
+- Free-tier models can be rate-limited or occasionally unavailable — that's
+  OpenRouter/the upstream provider, not this app; the error message will
+  say so.
+- Long-term memory extraction and vision (photo) input aren't supported
+  for OpenRouter-backed characters yet — both silently no-op rather than
+  erroring. Selfie/video generation are unaffected either way (those
+  always go through Stable Diffusion/ComfyUI regardless of chat provider).
+- `OPENROUTER_HOST` env var can override the API base URL, if you're
+  pointing at a compatible alternative.
 
 ### 7. Install and run the app
 
