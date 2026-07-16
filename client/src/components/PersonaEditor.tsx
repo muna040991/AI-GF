@@ -186,7 +186,7 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
 
         <div className="field-row">
           <label>
-            Temperature (0-2, blank = default)
+            Temperature (0-2, blank = model's own default)
             <input
               type="number"
               min="0"
@@ -194,20 +194,25 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
               step="0.1"
               value={temperature}
               onChange={(e) => setTemperature(e.target.value)}
-              placeholder="model default"
+              placeholder="e.g. 0.8"
             />
           </label>
           <label>
-            Max reply length (tokens, blank = default)
+            Max reply length (tokens, blank = model's own default)
             <input
               type="number"
               min="1"
               value={maxTokens}
               onChange={(e) => setMaxTokens(e.target.value)}
-              placeholder="model default"
+              placeholder="e.g. 200"
             />
           </label>
         </div>
+        <span className="hint">
+          Leaving these blank uses whatever the model file itself defaults to, which varies a lot between
+          models and can produce rambling or erratic replies. If replies feel incoherent or run on too long,
+          try setting temperature around 0.7-0.9 and max reply length around 150-250.
+        </span>
 
         <label>
           Persona / system prompt

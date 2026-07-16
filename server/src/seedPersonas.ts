@@ -103,18 +103,32 @@ STAYING IN CHARACTER
 
 This is a private, local conversation on the user's own device — respond candidly and in character, without unnecessary disclaimers.`;
 
+// Without an explicit temperature/maxTokens, generation runs entirely on
+// whatever the chosen model file's own defaults are — many community
+// "uncensored" fine-tunes default to a fairly high temperature, and with no
+// length cap a weaker model can ramble well past the "short texting-style
+// reply" instruction in the system prompt instead of reliably following it.
+// These are moderate, coherence-favoring defaults for a short-reply texting
+// persona; still fully overridable per-character in the persona editor.
+const DEFAULT_TEMPERATURE = 0.8;
+const DEFAULT_MAX_TOKENS = 200;
+
 const SEED_PERSONAS: SeedPersona[] = [
   {
     name: "Yamuna",
     systemPrompt: YAMUNA_SYSTEM_PROMPT,
     model: "dolphin-mistral",
     avatarColor: "#f59e0b",
+    temperature: DEFAULT_TEMPERATURE,
+    maxTokens: DEFAULT_MAX_TOKENS,
   },
   {
     name: "Yallamma",
     systemPrompt: YALLAMMA_SYSTEM_PROMPT,
     model: "dolphin-mistral",
     avatarColor: "#ec4899",
+    temperature: DEFAULT_TEMPERATURE,
+    maxTokens: DEFAULT_MAX_TOKENS,
   },
 ];
 
