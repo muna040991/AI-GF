@@ -2,14 +2,21 @@
 // on-device (OS/browser voices) — unlike speech *recognition*, it never
 // sends anything over the network.
 
-export function speak(text: string, voiceURI?: string) {
-  if (!("speechSynthesis" in window) || !text.trim()) return;
+export function speak(text: string, voiceURI?: string, onEnd?: () => void) {
+  if (!("speechSynthesis" in window) || !text.trim()) {
+    onEnd?.();
+    return;
+  }
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   if (voiceURI) {
     const voice = window.speechSynthesis.getVoices().find((v) => v.voiceURI === voiceURI);
     if (voice) utterance.voice = voice;
+  }
+  if (onEnd) {
+    utterance.onend = onEnd;
+    utterance.onerror = onEnd;
   }
   window.speechSynthesis.speak(utterance);
 }

@@ -5,6 +5,10 @@ export interface Persona {
   model: string;
   avatarColor: string;
   voiceURI?: string;
+  avatarImage?: string;
+  temperature?: number;
+  maxTokens?: number;
+  appearance?: string;
   createdAt: number;
 }
 
@@ -20,6 +24,17 @@ export interface Message {
   conversationId: string;
   role: "user" | "assistant";
   content: string;
+  variants?: string[];
+  activeVariantIndex?: number;
+  pinned?: boolean;
+  images?: string[];
+  createdAt: number;
+}
+
+export interface Memory {
+  id: string;
+  personaId: string;
+  content: string;
   createdAt: number;
 }
 
@@ -27,6 +42,14 @@ export interface OllamaModel {
   name: string;
   size: number;
   modified_at: string;
+}
+
+export interface SearchResult {
+  message: Message;
+  personaId: string;
+  personaName: string;
+  conversationId: string;
+  conversationTitle: string;
 }
 
 async function json<T>(res: Response): Promise<T> {
@@ -54,6 +77,13 @@ export const api = {
       body: JSON.stringify(data),
     }).then((r) => json<Persona>(r)),
   deletePersona: (id: string) => fetch(`/api/personas/${id}`, { method: "DELETE" }),
+  exportPersona: (id: string) => fetch(`/api/personas/${id}/export`).then((r) => json<unknown>(r)),
+  importPersona: (card: unknown) =>
+    fetch("/api/personas/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(card),
+    }).then((r) => json<Persona>(r)),
 
   listConversations: (personaId: string) =>
     fetch(`/api/conversations/persona/${personaId}`).then((r) => json<Conversation[]>(r)),
@@ -67,6 +97,50 @@ export const api = {
 
   listMessages: (conversationId: string) =>
     fetch(`/api/conversations/${conversationId}/messages`).then((r) => json<Message[]>(r)),
+  editMessage: (conversationId: string, messageId: string, content: string) =>
+    fetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    }).then((r) => json<Message>(r)),
+  deleteMessage: (conversationId: string, messageId: string) =>
+    fetch(`/api/conversations/${conversationId}/messages/${messageId}`, { method: "DELETE" }),
+  swipeMessage: (conversationId: string, messageId: string, direction: "prev" | "next") =>
+    fetch(`/api/conversations/${conversationId}/messages/${messageId}/swipe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ direction }),
+    }).then((r) => json<Message>(r)),
+  togglePin: (conversationId: string, messageId: string) =>
+    fetch(`/api/conversations/${conversationId}/messages/${messageId}/pin`, {
+      method: "PATCH",
+    }).then((r) => json<Message>(r)),
+
+  generateImage: (conversationId: string, prompt: string) =>
+    fetch(`/api/conversations/${conversationId}/images`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    }).then((r) => json<Message>(r)),
+
+  search: (q: string) =>
+    fetch(`/api/search?q=${encodeURIComponent(q)}`).then((r) => json<SearchResult[]>(r)),
+
+  listMemories: (personaId: string) =>
+    fetch(`/api/personas/${personaId}/memories`).then((r) => json<Memory[]>(r)),
+  addMemory: (personaId: string, content: string) =>
+    fetch(`/api/personas/${personaId}/memories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    }).then((r) => json<Memory>(r)),
+  editMemory: (id: string, content: string) =>
+    fetch(`/api/memories/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    }).then((r) => json<Memory>(r)),
+  deleteMemory: (id: string) => fetch(`/api/memories/${id}`, { method: "DELETE" }),
 
   transcribe: async (blob: Blob): Promise<string> => {
     const res = await fetch("/api/transcribe", {
@@ -77,29 +151,30 @@ export const api = {
     const data = await json<{ text: string }>(res);
     return data.text;
   },
+
+  exportBackup: (passphrase: string) =>
+    fetch("/api/backup/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase }),
+    }).then((r) => json<unknown>(r)),
+  importBackup: (passphrase: string, envelope: unknown) =>
+    fetch("/api/backup/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase, envelope }),
+    }).then((r) => json<{ ok: true }>(r)),
 };
 
 interface StreamHandlers {
   onToken: (chunk: string) => void;
   onDone: (message: Message) => void;
   onError: (message: string) => void;
+  /** Fires once the user's own message is durably saved, with its real server-assigned id. */
+  onUserSaved?: (message: Message) => void;
 }
 
-/**
- * Posts a user message and streams the assistant's Server-Sent Events
- * reply, invoking the matching handler as each event arrives.
- */
-export async function sendMessageStream(
-  conversationId: string,
-  content: string,
-  handlers: StreamHandlers
-): Promise<void> {
-  const res = await fetch(`/api/conversations/${conversationId}/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
-
+async function readSseStream(res: Response, handlers: StreamHandlers): Promise<void> {
   if (!res.ok || !res.body) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     handlers.onError(body.error ?? "Request failed");
@@ -130,6 +205,37 @@ export async function sendMessageStream(
       if (event === "token") handlers.onToken(data.chunk);
       else if (event === "done") handlers.onDone(data.message);
       else if (event === "error") handlers.onError(data.message);
+      else if (event === "user_saved") handlers.onUserSaved?.(data.message);
     }
   }
+}
+
+/**
+ * Posts a user message (optionally with attached images for vision-capable
+ * models) and streams the assistant's Server-Sent Events reply.
+ */
+export async function sendMessageStream(
+  conversationId: string,
+  content: string,
+  handlers: StreamHandlers,
+  images?: string[]
+): Promise<void> {
+  const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, images }),
+  });
+  await readSseStream(res, handlers);
+}
+
+/** Regenerates the most recent assistant message, streaming the new variant. */
+export async function regenerateMessageStream(
+  conversationId: string,
+  messageId: string,
+  handlers: StreamHandlers
+): Promise<void> {
+  const res = await fetch(`/api/conversations/${conversationId}/messages/${messageId}/regenerate`, {
+    method: "POST",
+  });
+  await readSseStream(res, handlers);
 }

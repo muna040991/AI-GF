@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, type Conversation, type OllamaModel, type Persona } from "./api.js";
 import { ChatWindow } from "./components/ChatWindow.js";
 import { PersonaEditor } from "./components/PersonaEditor.js";
+import { SearchModal } from "./components/SearchModal.js";
+import { SettingsModal } from "./components/SettingsModal.js";
 import { Sidebar } from "./components/Sidebar.js";
 
 export default function App() {
@@ -12,8 +14,13 @@ export default function App() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const pendingConversationId = useRef<string | null>(null);
 
   const [editingPersona, setEditingPersona] = useState<Persona | "new" | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     api.listPersonas().then((list) => {
@@ -34,7 +41,13 @@ export default function App() {
     }
     api.listConversations(selectedPersonaId).then((list) => {
       setConversations(list);
-      setSelectedConversationId(list[0]?.id ?? null);
+      const desired = pendingConversationId.current;
+      pendingConversationId.current = null;
+      if (desired && list.some((c) => c.id === desired)) {
+        setSelectedConversationId(desired);
+      } else {
+        setSelectedConversationId(list[0]?.id ?? null);
+      }
     });
   }, [selectedPersonaId]);
 
@@ -73,23 +86,72 @@ export default function App() {
     if (selectedPersonaId === id) setSelectedPersonaId(null);
   }
 
+  function handleNavigateToMessage(personaId: string, conversationId: string) {
+    if (personaId === selectedPersonaId) {
+      setSelectedConversationId(conversationId);
+    } else {
+      pendingConversationId.current = conversationId;
+      setSelectedPersonaId(personaId);
+    }
+  }
+
+  async function handleExportPersona(persona: Persona) {
+    const card = await api.exportPersona(persona.id);
+    const blob = new Blob([JSON.stringify(card, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${persona.name.toLowerCase().replace(/\s+/g, "-")}.card.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportPersona(file: File) {
+    setError(null);
+    try {
+      const text = await file.text();
+      const card = JSON.parse(text);
+      const persona = await api.importPersona(card);
+      setPersonas((prev) => [...prev, persona]);
+      setSelectedPersonaId(persona.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not import that character card.");
+    }
+  }
+
   return (
     <div className="app">
       <Sidebar
         personas={personas}
         selectedPersonaId={selectedPersonaId}
-        onSelectPersona={setSelectedPersonaId}
+        onSelectPersona={(id) => {
+          setSelectedPersonaId(id);
+          setMobileSidebarOpen(false);
+        }}
         onNewPersona={() => setEditingPersona("new")}
         onEditPersona={(p) => setEditingPersona(p)}
         onDeletePersona={handleDeletePersona}
+        onExportPersona={handleExportPersona}
+        onImportPersona={handleImportPersona}
         conversations={conversations}
         selectedConversationId={selectedConversationId}
-        onSelectConversation={setSelectedConversationId}
+        onSelectConversation={(id) => {
+          setSelectedConversationId(id);
+          setMobileSidebarOpen(false);
+        }}
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
         modelsError={modelsError}
+        onOpenSearch={() => setShowSearch(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
       />
       <main className="main">
+        <button className="mobile-menu-btn" onClick={() => setMobileSidebarOpen(true)} title="Menu">
+          ☰
+        </button>
+        {error && <div className="toast-error">{error}</div>}
         {selectedPersona && selectedConversationId ? (
           <ChatWindow key={selectedConversationId} persona={selectedPersona} conversationId={selectedConversationId} />
         ) : (
@@ -112,6 +174,8 @@ export default function App() {
           onSave={(data) => handleSavePersona(data, editingPersona)}
         />
       )}
+      {showSearch && <SearchModal onClose={() => setShowSearch(false)} onNavigate={handleNavigateToMessage} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

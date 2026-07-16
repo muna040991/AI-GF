@@ -6,6 +6,13 @@ const OLLAMA_HOST = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
+  /** Raw base64 image data (no "data:image/...;base64," prefix), for vision-capable models. */
+  images?: string[];
+}
+
+export interface GenerationOptions {
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface OllamaModel {
@@ -60,12 +67,21 @@ export async function embed(model: string, text: string): Promise<number[]> {
 export async function chatStream(
   model: string,
   messages: ChatMessage[],
-  onToken: (chunk: string) => void
+  onToken: (chunk: string) => void,
+  options?: GenerationOptions
 ): Promise<string> {
   const res = await guardedFetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages, stream: true }),
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: true,
+      options: {
+        ...(options?.temperature !== undefined ? { temperature: options.temperature } : {}),
+        ...(options?.maxTokens !== undefined ? { num_predict: options.maxTokens } : {}),
+      },
+    }),
   });
 
   if (!res.body) throw new OllamaError("Ollama returned no response body");
@@ -103,4 +119,10 @@ export async function chatStream(
 
 export async function chatOnce(model: string, messages: ChatMessage[]): Promise<string> {
   return chatStream(model, messages, () => {});
+}
+
+/** Strips a "data:image/...;base64," prefix, if present, leaving raw base64. */
+export function toRawBase64(dataUri: string): string {
+  const commaIndex = dataUri.indexOf(",");
+  return dataUri.startsWith("data:") && commaIndex !== -1 ? dataUri.slice(commaIndex + 1) : dataUri;
 }

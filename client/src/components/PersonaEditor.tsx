@@ -23,25 +23,67 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
   const [avatarColor, setAvatarColor] = useState(persona?.avatarColor ?? COLORS[0]);
   const [voiceURI, setVoiceURI] = useState(persona?.voiceURI ?? "");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [avatarImage, setAvatarImage] = useState(persona?.avatarImage ?? "");
+  const [appearance, setAppearance] = useState(persona?.appearance ?? "");
+  const [temperature, setTemperature] = useState(persona?.temperature?.toString() ?? "");
+  const [maxTokens, setMaxTokens] = useState(persona?.maxTokens?.toString() ?? "");
 
   useEffect(() => {
     getVoices().then(setVoices);
   }, []);
 
+  function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setAvatarImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !systemPrompt.trim() || !model) return;
-    onSave({ name: name.trim(), systemPrompt: systemPrompt.trim(), model, avatarColor, voiceURI: voiceURI || undefined });
+    onSave({
+      name: name.trim(),
+      systemPrompt: systemPrompt.trim(),
+      model,
+      avatarColor,
+      voiceURI: voiceURI || undefined,
+      avatarImage: avatarImage || undefined,
+      appearance: appearance.trim() || undefined,
+      temperature: temperature.trim() ? Number(temperature) : undefined,
+      maxTokens: maxTokens.trim() ? Number(maxTokens) : undefined,
+    });
   }
 
   return (
     <div className="modal-backdrop" onClick={onCancel}>
-      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+      <form className="modal persona-editor" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <h3>{persona ? "Edit character" : "New character"}</h3>
 
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Aria" autoFocus />
+        </label>
+
+        <label>
+          Avatar image
+          <div className="avatar-upload-row">
+            {avatarImage ? (
+              <img src={avatarImage} alt="" className="avatar-img" />
+            ) : (
+              <span className="avatar-dot" style={{ background: avatarColor }} />
+            )}
+            <input type="file" accept="image/*" onChange={handleAvatarFile} />
+            {avatarImage && (
+              <button type="button" onClick={() => setAvatarImage("")}>
+                Remove
+              </button>
+            )}
+          </div>
         </label>
 
         <label>
@@ -63,9 +105,44 @@ export function PersonaEditor({ persona, availableModels, onCancel, onSave }: Pr
           )}
         </label>
 
+        <div className="field-row">
+          <label>
+            Temperature (0-2, blank = default)
+            <input
+              type="number"
+              min="0"
+              max="2"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => setTemperature(e.target.value)}
+              placeholder="model default"
+            />
+          </label>
+          <label>
+            Max reply length (tokens, blank = default)
+            <input
+              type="number"
+              min="1"
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(e.target.value)}
+              placeholder="model default"
+            />
+          </label>
+        </div>
+
         <label>
           Persona / system prompt
           <textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={6} />
+        </label>
+
+        <label>
+          Appearance (used as the base prompt for AI-generated selfies)
+          <textarea
+            value={appearance}
+            onChange={(e) => setAppearance(e.target.value)}
+            rows={2}
+            placeholder="e.g. 44 year old Indian woman, warm smile, traditional saree, kitchen background"
+          />
         </label>
 
         <label>

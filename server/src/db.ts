@@ -40,4 +40,9 @@ export const db = {
     save(store);
     return result;
   },
+  /** Wholesale-replaces the store (e.g. restoring from a backup) and persists it. */
+  replace(next: StoreShape): void {
+    store = { ...emptyStore(), ...next };
+    save(store);
+  },
 };

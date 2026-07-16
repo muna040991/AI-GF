@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { Conversation, Persona } from "../api.js";
 
 interface Props {
@@ -7,6 +8,8 @@ interface Props {
   onNewPersona: () => void;
   onEditPersona: (persona: Persona) => void;
   onDeletePersona: (id: string) => void;
+  onExportPersona: (persona: Persona) => void;
+  onImportPersona: (file: File) => void;
 
   conversations: Conversation[];
   selectedConversationId: string | null;
@@ -15,6 +18,10 @@ interface Props {
   onDeleteConversation: (id: string) => void;
 
   modelsError: string | null;
+  onOpenSearch: () => void;
+  onOpenSettings: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 export function Sidebar({
@@ -24,21 +31,54 @@ export function Sidebar({
   onNewPersona,
   onEditPersona,
   onDeletePersona,
+  onExportPersona,
+  onImportPersona,
   conversations,
   selectedConversationId,
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
   modelsError,
+  onOpenSearch,
+  onOpenSettings,
+  mobileOpen,
+  onMobileClose,
 }: Props) {
+  const importInputRef = useRef<HTMLInputElement>(null);
+
   return (
-    <aside className="sidebar">
+    <>
+      {mobileOpen && <div className="sidebar-backdrop" onClick={onMobileClose} />}
+      <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
+        <div className="app-bar">
+          <span className="app-title">AI-GF</span>
+          <button className="icon-btn" onClick={onOpenSearch} title="Search conversations">
+            🔍
+          </button>
+        </div>
+
       <div className="sidebar-section">
         <div className="sidebar-header">
           <span>Characters</span>
-          <button className="icon-btn" onClick={onNewPersona} title="New character">
-            +
-          </button>
+          <span>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json"
+              className="visually-hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onImportPersona(file);
+                e.target.value = "";
+              }}
+            />
+            <button className="icon-btn" onClick={() => importInputRef.current?.click()} title="Import character card">
+              ⇪
+            </button>
+            <button className="icon-btn" onClick={onNewPersona} title="New character">
+              +
+            </button>
+          </span>
         </div>
         {modelsError && <p className="warning">Ollama unreachable: {modelsError}</p>}
         <ul className="list">
@@ -48,9 +88,23 @@ export function Sidebar({
               className={`list-item ${persona.id === selectedPersonaId ? "active" : ""}`}
               onClick={() => onSelectPersona(persona.id)}
             >
-              <span className="avatar-dot" style={{ background: persona.avatarColor }} />
+              {persona.avatarImage ? (
+                <img src={persona.avatarImage} alt="" className="avatar-img small" />
+              ) : (
+                <span className="avatar-dot" style={{ background: persona.avatarColor }} />
+              )}
               <span className="list-item-label">{persona.name}</span>
               <span className="list-item-actions">
+                <button
+                  className="icon-btn small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExportPersona(persona);
+                  }}
+                  title="Export character card"
+                >
+                  ⇩
+                </button>
                 <button
                   className="icon-btn small"
                   onClick={(e) => {
@@ -114,6 +168,13 @@ export function Sidebar({
           </ul>
         </div>
       )}
-    </aside>
+
+        <div className="sidebar-footer">
+          <button className="icon-btn" onClick={onOpenSettings} title="Settings">
+            ⚙ Settings
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

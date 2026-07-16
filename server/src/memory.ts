@@ -92,3 +92,23 @@ export async function maybeExtractMemory(
     // Extraction is best-effort; never let it break the chat flow.
   }
 }
+
+/** Adds a memory the user typed in directly, embedding it the same way auto-extracted ones are. */
+export async function addManualMemory(personaId: string, content: string): Promise<Memory> {
+  const embedding = await embed(EMBED_MODEL, content).catch(() => []);
+  const memory: Memory = { id: nanoid(), personaId, content, embedding, createdAt: Date.now() };
+  db.mutate((s) => s.memories.push(memory));
+  return memory;
+}
+
+/** Re-embeds a memory after its text changes, so retrieval stays accurate. */
+export async function updateMemoryContent(id: string, content: string): Promise<Memory | null> {
+  const embedding = await embed(EMBED_MODEL, content).catch(() => []);
+  return db.mutate((s) => {
+    const memory = s.memories.find((m) => m.id === id);
+    if (!memory) return null;
+    memory.content = content;
+    if (embedding.length > 0) memory.embedding = embedding;
+    return memory;
+  });
+}
