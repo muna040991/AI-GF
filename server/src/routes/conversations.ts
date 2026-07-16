@@ -18,12 +18,50 @@ function sortedMessages(conversationId: string): Message[] {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
+// Only user-attached photos are meaningful "vision input" for the model to
+// look at. Assistant messages can also carry images (AI-generated selfies),
+// but those are content shown to the user, not something to feed back into
+// the model — doing so would permanently break every future turn in the
+// conversation for any non-vision-capable model once a single selfie exists.
 function toChatMessage(m: Message): ChatMessage {
   return {
     role: m.role,
     content: m.content,
-    ...(m.images && m.images.length > 0 ? { images: m.images.map(toRawBase64) } : {}),
+    ...(m.role === "user" && m.images && m.images.length > 0
+      ? { images: m.images.map(toRawBase64) }
+      : {}),
   };
+}
+
+/** True if the Ollama error indicates the model doesn't support image input. */
+function isUnsupportedMultimodalError(err: unknown): boolean {
+  return err instanceof OllamaError && /multimodal/i.test(err.message);
+}
+
+function stripImages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map(({ images: _images, ...rest }) => rest);
+}
+
+/**
+ * Streams a chat completion, automatically retrying once without any
+ * attached images if the model rejects the request for not supporting
+ * multimodal input (e.g. a photo was attached in chat, or a persona was
+ * switched to a non-vision model after a vision conversation started).
+ * Degrades gracefully — the reply just won't reference the photo — instead
+ * of leaving the conversation permanently broken.
+ */
+async function chatStreamWithVisionFallback(
+  model: string,
+  messages: ChatMessage[],
+  onToken: (chunk: string) => void,
+  options?: { temperature?: number; maxTokens?: number }
+): Promise<string> {
+  try {
+    return await chatStream(model, messages, onToken, options);
+  } catch (err) {
+    if (!isUnsupportedMultimodalError(err)) throw err;
+    return chatStream(model, stripImages(messages), onToken, options);
+  }
 }
 
 async function buildSystemPrompt(persona: Persona, latestUserContent: string): Promise<string> {
@@ -307,7 +345,7 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
       ...history.map(toChatMessage),
     ];
 
-    const fullReply = await chatStream(
+    const fullReply = await chatStreamWithVisionFallback(
       persona.model,
       chatMessages,
       (chunk) => send("token", { chunk }),
@@ -374,7 +412,7 @@ conversationsRouter.post("/:id/messages/:messageId/regenerate", async (req, res)
       ...historyBefore.map(toChatMessage),
     ];
 
-    const fullReply = await chatStream(
+    const fullReply = await chatStreamWithVisionFallback(
       persona.model,
       chatMessages,
       (chunk) => send("token", { chunk }),
