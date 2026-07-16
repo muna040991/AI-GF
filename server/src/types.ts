@@ -39,4 +39,6 @@ export interface StoreShape {
   conversations: Conversation[];
   messages: Message[];
   memories: Memory[];
+  /** Names of built-in starter personas ever seeded, so deleted ones don't reappear. */
+  seededPersonaNames: string[];
 }

@@ -8,7 +8,7 @@ const DATA_DIR = join(__dirname, "..", "..", "data");
 const DATA_FILE = join(DATA_DIR, "store.json");
 
 function emptyStore(): StoreShape {
-  return { personas: [], conversations: [], messages: [], memories: [] };
+  return { personas: [], conversations: [], messages: [], memories: [], seededPersonaNames: [] };
 }
 
 function load(): StoreShape {
