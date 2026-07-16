@@ -1,5 +1,6 @@
 import { Router, type Response } from "express";
 import { nanoid } from "nanoid";
+import { ComfyUIError, generateVideo } from "../comfyUI.js";
 import { db } from "../db.js";
 import { chatStream, OllamaError, toRawBase64, type ChatMessage } from "../ollama.js";
 import { maybeExtractMemory, retrieveRelevantMemories } from "../memory.js";
@@ -209,6 +210,55 @@ conversationsRouter.post("/:id/images", async (req, res) => {
     res.status(201).json(message);
   } catch (err) {
     const message = err instanceof StableDiffusionError ? err.message : "Image generation failed.";
+    res.status(503).json({ error: message });
+  }
+});
+
+// Animates a source image into a short video via a local ComfyUI server and
+// saves it as an assistant message. The source image is whichever the
+// client points at (a specific message's image), falling back to the most
+// recently generated/attached image in the conversation, then the
+// character's avatar. Not streamed, same as image generation.
+conversationsRouter.post("/:id/videos", async (req, res) => {
+  const { id } = req.params;
+  const motionPrompt: string = req.body?.motionPrompt ?? "";
+  const explicitImage: string | undefined = req.body?.image;
+
+  const conversation = db.get().conversations.find((c) => c.id === id);
+  if (!conversation) {
+    res.status(404).json({ error: "conversation not found" });
+    return;
+  }
+  const persona = db.get().personas.find((p) => p.id === conversation.personaId);
+  if (!persona) {
+    res.status(404).json({ error: "persona not found" });
+    return;
+  }
+
+  const lastMessageImage = [...sortedMessages(id)].reverse().find((m) => m.images && m.images.length > 0)
+    ?.images?.[0];
+  const sourceImage = explicitImage || lastMessageImage || persona.avatarImage;
+  if (!sourceImage) {
+    res.status(400).json({
+      error: "No image to animate — generate or attach a photo first, or set the character's avatar image.",
+    });
+    return;
+  }
+
+  try {
+    const video = await generateVideo(sourceImage, motionPrompt);
+    const message: Message = {
+      id: nanoid(),
+      conversationId: id,
+      role: "assistant",
+      content: motionPrompt.trim() ? `*sends a video* ${motionPrompt.trim()}` : "*sends a video*",
+      video,
+      createdAt: Date.now(),
+    };
+    db.mutate((s) => s.messages.push(message));
+    res.status(201).json(message);
+  } catch (err) {
+    const message = err instanceof ComfyUIError ? err.message : "Video generation failed.";
     res.status(503).json({ error: message });
   }
 });

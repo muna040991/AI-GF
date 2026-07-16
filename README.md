@@ -41,11 +41,15 @@ following your local laws for any content you generate. Characters must be
 - **Continuous call mode**: hands-free back-and-forth — recording auto-resumes
   after each spoken reply finishes
 
-**Images**
+**Images & video**
 - **AI-generated selfies**: local Stable Diffusion (Automatic1111) generates
   an in-character photo on request
 - **Vision input**: attach a photo in chat for the character to respond to
   (needs a vision-capable local model, e.g. `llava`)
+- **Animate a selfie into a short video**: local ComfyUI turns the most
+  recent photo (generated, attached, or the character's avatar) into a video
+  clip, with a motion-prompt box and a few motion templates (Cinematic Zoom,
+  Slow Pan, Dramatic Reveal, Gentle Sway); download or keep it in the chat
 
 **App**
 - **Light/dark theme** toggle
@@ -65,12 +69,15 @@ server/  Express API           (http://127.0.0.1:5174, loopback only)
            +--> whisper.cpp server  (http://127.0.0.1:8081)   speech-to-text
            |
            +--> Automatic1111       (http://127.0.0.1:7860)   image generation
+           |
+           +--> ComfyUI             (http://127.0.0.1:8188)   image-to-video
 ```
 
-The Express server is the only thing that talks to Ollama, whisper.cpp, or
-Automatic1111; the browser only ever talks to the Express server. All of them
-are bound to loopback. Voice *output* (text-to-speech) needs no server at
-all — it uses the browser's built-in `speechSynthesis`, which runs on-device.
+The Express server is the only thing that talks to Ollama, whisper.cpp,
+Automatic1111, or ComfyUI; the browser only ever talks to the Express server.
+All of them are bound to loopback. Voice *output* (text-to-speech) needs no
+server at all — it uses the browser's built-in `speechSynthesis`, which runs
+on-device.
 
 Note: voice input deliberately does **not** use the browser's built-in
 `SpeechRecognition` API — in Chrome/Edge that quietly sends your audio to
@@ -78,9 +85,9 @@ Google's servers for transcription, which would break the offline guarantee
 this app is built around. Recorded audio is instead transcribed locally via
 whisper.cpp.
 
-Every "local service" here (Ollama, whisper.cpp, Automatic1111) is optional
-independently — the app degrades gracefully with a clear inline error if one
-isn't running, rather than breaking anything else.
+Every "local service" here (Ollama, whisper.cpp, Automatic1111, ComfyUI) is
+optional independently — the app degrades gracefully with a clear inline
+error if one isn't running, rather than breaking anything else.
 
 ## Setup
 
@@ -149,7 +156,46 @@ Diffusion" error instead of breaking anything else. For best results, fill
 in a character's **Appearance** field in the persona editor — it's used as
 the base prompt for every selfie generated for that character.
 
-### 6. Install and run the app
+### 6. (Optional) Set up local image-to-video generation
+
+Animating a selfie into a video needs a local
+[ComfyUI](https://github.com/comfyanonymous/ComfyUI) server:
+
+```bash
+git clone https://github.com/comfyanonymous/ComfyUI
+cd ComfyUI
+pip install -r requirements.txt
+python main.py   # defaults to http://127.0.0.1:8188
+```
+
+Unlike Automatic1111, ComfyUI doesn't have one fixed "generate" endpoint —
+you build a workflow *graph* in its UI (which nodes, which checkpoints,
+which custom nodes), and that graph is what actually gets sent to run. There's
+no single JSON payload that works for everyone's install, so:
+
+1. Build (or import) an image-to-video workflow in the ComfyUI UI — e.g. the
+   built-in Stable Video Diffusion template, or an AnimateDiff-based one if
+   you want the motion prompt text box to actually influence the motion
+   (plain SVD is image-only and ignores it).
+2. Right-click your image-loading node → **Properties** → set **Title** to
+   exactly `AI-GF Image Input`.
+3. Right-click your final video-output node (e.g. a Video Helper Suite
+   "Video Combine" node) → set its **Title** to exactly `AI-GF Video Output`.
+4. If your workflow has a text-prompt node driving motion, title it
+   `AI-GF Motion Prompt` — optional, only wire this up if your workflow
+   actually uses text conditioning.
+5. Export via **Workflow → Export (API Format)** and save it as
+   `server/comfyui-workflow.json` (gitignored — it's your local setup, not
+   checked in).
+
+`server/comfyui-workflow.example.json` is a minimal Stable Video Diffusion
+skeleton to start from — it's a real, structurally valid ComfyUI graph, but
+you'll need to point `ckpt_name`/`clip_name` at checkpoints you actually have
+installed before it'll run. Skipping this whole step just makes the 🎬
+Animate button show a clear "couldn't reach ComfyUI" (or "no workflow
+configured") error instead of breaking anything else.
+
+### 7. Install and run the app
 
 ```bash
 npm install
@@ -179,6 +225,13 @@ npm start   # serves the built API on 5174; serve client/dist with any static fi
   local whisper.cpp server for voice input.
 - `SD_HOST` env var (default `http://127.0.0.1:7860`) points at your local
   Automatic1111 server for image generation.
+- `COMFYUI_HOST` env var (default `http://127.0.0.1:8188`) points at your
+  local ComfyUI server for image-to-video generation. `COMFYUI_WORKFLOW_PATH`
+  overrides where the workflow JSON is read from (default
+  `server/comfyui-workflow.json`).
+- The 🎬 Animate button animates, in order of preference: an image you
+  explicitly pick, the most recently generated/attached image in the current
+  conversation, or the character's avatar image.
 - Voice output uses whichever system/browser voices are installed. Pick a
   per-character voice in the persona editor, or leave it on "Browser default".
 - The mic button records with `MediaRecorder`; browsers require a secure

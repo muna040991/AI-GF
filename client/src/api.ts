@@ -28,6 +28,7 @@ export interface Message {
   activeVariantIndex?: number;
   pinned?: boolean;
   images?: string[];
+  video?: string;
   createdAt: number;
 }
 
@@ -121,6 +122,13 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
+    }).then((r) => json<Message>(r)),
+
+  generateVideo: (conversationId: string, motionPrompt: string, image?: string) =>
+    fetch(`/api/conversations/${conversationId}/videos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ motionPrompt, image }),
     }).then((r) => json<Message>(r)),
 
   search: (q: string) =>

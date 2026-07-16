@@ -12,6 +12,14 @@ interface Props {
 
 const AUTO_SPEAK_KEY = "ai-gf:auto-speak";
 
+const MOTION_TEMPLATES = [
+  { label: "None", keywords: "" },
+  { label: "Cinematic Zoom", keywords: "slow cinematic zoom in, smooth camera motion" },
+  { label: "Slow Pan", keywords: "slow horizontal pan, gentle camera movement" },
+  { label: "Dramatic Reveal", keywords: "dramatic reveal, slow motion, particles" },
+  { label: "Gentle Sway", keywords: "gentle idle sway, subtle breathing motion, hair movement" },
+];
+
 export function ChatWindow({ persona, conversationId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
@@ -20,6 +28,8 @@ export function ChatWindow({ persona, conversationId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [videoTemplate, setVideoTemplate] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem(AUTO_SPEAK_KEY) === "1");
   const [callMode, setCallMode] = useState(false);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
@@ -222,6 +232,32 @@ export function ChatWindow({ persona, conversationId }: Props) {
     }
   }
 
+  async function handleGenerateVideo() {
+    const template = MOTION_TEMPLATES[videoTemplate];
+    const motionPrompt = [draft.trim(), template.keywords].filter(Boolean).join(", ");
+    setDraft("");
+    setGeneratingVideo(true);
+    setError(null);
+    try {
+      const message = await api.generateVideo(conversationId, motionPrompt);
+      setMessages((prev) => [...prev, message]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Video generation failed.");
+    } finally {
+      setGeneratingVideo(false);
+    }
+  }
+
+  function downloadMedia(message: Message) {
+    const dataUri = message.video ?? message.images?.[0];
+    if (!dataUri) return;
+    const extension = message.video ? "mp4" : "png";
+    const a = document.createElement("a");
+    a.href = dataUri;
+    a.download = `ai-gf-${message.id}.${extension}`;
+    a.click();
+  }
+
   function handleMicClick() {
     if (recorder.status === "recording") recorder.stop();
     else recorder.start();
@@ -287,6 +323,7 @@ export function ChatWindow({ persona, conversationId }: Props) {
           return (
             <div key={message.id} className={`bubble ${message.role}`}>
               {message.images?.map((img, i) => <img key={i} src={img} alt="" className="msg-image" />)}
+              {message.video && <video src={message.video} controls loop className="msg-video" />}
 
               {isEditing ? (
                 <div className="msg-edit">
@@ -307,6 +344,11 @@ export function ChatWindow({ persona, conversationId }: Props) {
                   {message.role === "assistant" && (
                     <button className="msg-action-btn" onClick={() => speak(message.content, persona.voiceURI)} title="Read aloud">
                       🔊
+                    </button>
+                  )}
+                  {(message.video || message.images?.length) && (
+                    <button className="msg-action-btn" onClick={() => downloadMedia(message)} title="Download">
+                      ⬇
                     </button>
                   )}
                   <button
@@ -347,6 +389,7 @@ export function ChatWindow({ persona, conversationId }: Props) {
         })}
         {streamingText !== null && <div className="bubble assistant">{renderMarkdown(streamingText || "…")}</div>}
         {generatingImage && <div className="bubble assistant">*generating a photo…* 📷</div>}
+        {generatingVideo && <div className="bubble assistant">*animating a video, this can take a while…* 🎬</div>}
         {error && <div className="bubble error">{error}</div>}
         {recorder.error && <div className="bubble error">{recorder.error}</div>}
         <div ref={bottomRef} />
@@ -376,6 +419,21 @@ export function ChatWindow({ persona, conversationId }: Props) {
         </button>
         <button className="icon-btn attach-btn" onClick={handleGenerateImage} disabled={generatingImage} title="Generate a selfie">
           📷
+        </button>
+        <select
+          className="video-template-select"
+          value={videoTemplate}
+          onChange={(e) => setVideoTemplate(Number(e.target.value))}
+          title="Motion template"
+        >
+          {MOTION_TEMPLATES.map((t, i) => (
+            <option key={t.label} value={i}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <button className="icon-btn attach-btn" onClick={handleGenerateVideo} disabled={generatingVideo} title="Animate into a video">
+          🎬
         </button>
         <button
           className={`mic-btn ${recorder.status}`}

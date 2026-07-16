@@ -7,3 +7,4 @@ build/
 data/*.json
 !data/.gitkeep
 .env
+server/comfyui-workflow.json

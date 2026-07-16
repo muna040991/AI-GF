@@ -37,6 +37,8 @@ export interface Message {
   pinned?: boolean;
   /** Data-URI images attached to (user, vision input) or generated for (assistant, selfies) this message. */
   images?: string[];
+  /** Data-URI (video/mp4) generated for this message, if it's an animated selfie. */
+  video?: string;
   createdAt: number;
 }
 

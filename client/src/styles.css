@@ -321,11 +321,16 @@ body {
   font-size: 13px;
 }
 
-.msg-image {
+.msg-image,
+.msg-video {
   display: block;
   max-width: 100%;
   border-radius: 10px;
   margin-bottom: 6px;
+}
+
+.msg-video {
+  max-height: 360px;
 }
 
 .msg-actions {
@@ -514,6 +519,17 @@ body {
   border-color: #ef4444;
   color: white;
   animation: pulse 1.2s ease-in-out infinite;
+}
+
+.chat-input .video-template-select {
+  flex-shrink: 0;
+  width: 120px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 0 6px;
 }
 
 @keyframes pulse {
