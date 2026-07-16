@@ -740,18 +740,6 @@ body {
   animation: pulse 1.2s ease-in-out infinite;
 }
 
-.chat-input .video-template-select {
-  flex-shrink: 0;
-  width: 110px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text);
-  font-size: 12px;
-  padding: 0 10px;
-  height: 40px;
-}
-
 @keyframes pulse {
   0%,
   100% {

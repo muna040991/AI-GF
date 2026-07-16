@@ -3,6 +3,7 @@ import { api, regenerateMessageStream, sendMessageStream, type Message, type Per
 import { renderMarkdown } from "../markdown.js";
 import { speak, stopSpeaking } from "../tts.js";
 import { useVoiceRecorder } from "../useVoiceRecorder.js";
+import { GenerateMediaModal } from "./GenerateMediaModal.js";
 import { MemoriesModal } from "./MemoriesModal.js";
 
 interface Props {
@@ -11,14 +12,6 @@ interface Props {
 }
 
 const AUTO_SPEAK_KEY = "ai-gf:auto-speak";
-
-const MOTION_TEMPLATES = [
-  { label: "None", keywords: "" },
-  { label: "Cinematic Zoom", keywords: "slow cinematic zoom in, smooth camera motion" },
-  { label: "Slow Pan", keywords: "slow horizontal pan, gentle camera movement" },
-  { label: "Dramatic Reveal", keywords: "dramatic reveal, slow motion, particles" },
-  { label: "Gentle Sway", keywords: "gentle idle sway, subtle breathing motion, hair movement" },
-];
 
 export function ChatWindow({ persona, conversationId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -29,7 +22,8 @@ export function ChatWindow({ persona, conversationId }: Props) {
   const [sending, setSending] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [generatingVideo, setGeneratingVideo] = useState(false);
-  const [videoTemplate, setVideoTemplate] = useState(0);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem(AUTO_SPEAK_KEY) === "1");
   const [callMode, setCallMode] = useState(false);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
@@ -217,13 +211,12 @@ export function ChatWindow({ persona, conversationId }: Props) {
     reader.readAsDataURL(file);
   }
 
-  async function handleGenerateImage() {
-    const prompt = draft.trim();
-    setDraft("");
+  async function handleGenerateImage(details: string) {
+    setShowPhotoModal(false);
     setGeneratingImage(true);
     setError(null);
     try {
-      const message = await api.generateImage(conversationId, prompt);
+      const message = await api.generateImage(conversationId, details);
       setMessages((prev) => [...prev, message]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Image generation failed.");
@@ -232,10 +225,8 @@ export function ChatWindow({ persona, conversationId }: Props) {
     }
   }
 
-  async function handleGenerateVideo() {
-    const template = MOTION_TEMPLATES[videoTemplate];
-    const motionPrompt = [draft.trim(), template.keywords].filter(Boolean).join(", ");
-    setDraft("");
+  async function handleGenerateVideo(motionPrompt: string) {
+    setShowVideoModal(false);
     setGeneratingVideo(true);
     setError(null);
     try {
@@ -444,22 +435,20 @@ export function ChatWindow({ persona, conversationId }: Props) {
         <button className="icon-btn attach-btn" onClick={() => fileInputRef.current?.click()} title="Attach a photo">
           📎
         </button>
-        <button className="icon-btn attach-btn" onClick={handleGenerateImage} disabled={generatingImage} title="Generate a selfie">
+        <button
+          className="icon-btn attach-btn"
+          onClick={() => setShowPhotoModal(true)}
+          disabled={generatingImage}
+          title="Generate a selfie"
+        >
           📷
         </button>
-        <select
-          className="video-template-select"
-          value={videoTemplate}
-          onChange={(e) => setVideoTemplate(Number(e.target.value))}
-          title="Motion template"
+        <button
+          className="icon-btn attach-btn"
+          onClick={() => setShowVideoModal(true)}
+          disabled={generatingVideo}
+          title="Animate into a video"
         >
-          {MOTION_TEMPLATES.map((t, i) => (
-            <option key={t.label} value={i}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-        <button className="icon-btn attach-btn" onClick={handleGenerateVideo} disabled={generatingVideo} title="Animate into a video">
           🎬
         </button>
         <button
@@ -494,6 +483,24 @@ export function ChatWindow({ persona, conversationId }: Props) {
       </div>
 
       {showMemories && <MemoriesModal persona={persona} onClose={() => setShowMemories(false)} />}
+      {showPhotoModal && (
+        <GenerateMediaModal
+          kind="photo"
+          persona={persona}
+          busy={generatingImage}
+          onCancel={() => setShowPhotoModal(false)}
+          onGenerate={handleGenerateImage}
+        />
+      )}
+      {showVideoModal && (
+        <GenerateMediaModal
+          kind="video"
+          persona={persona}
+          busy={generatingVideo}
+          onCancel={() => setShowVideoModal(false)}
+          onGenerate={handleGenerateVideo}
+        />
+      )}
     </div>
   );
 }

@@ -24,13 +24,22 @@ interface ImageResponse {
   images?: string[];
 }
 
+// Image quality is driven almost entirely by which checkpoint is loaded in
+// Automatic1111, not by these numbers — but they're worth tuning to match
+// your checkpoint. 512x512 is the safe default for most SD1.5-family
+// "uncensored" checkpoints; going higher without a checkpoint trained for it
+// (SDXL-based, or SD1.5 + hires fix) produces duplicated limbs/faces instead
+// of a sharper image. If your checkpoint is SDXL-based, try SD_WIDTH=1024
+// SD_HEIGHT=1024. All of these are overridable per-install via env vars.
 const BASE_PARAMS = {
-  negative_prompt: "blurry, distorted, extra limbs, text, watermark",
-  steps: 20,
-  width: 512,
-  height: 512,
-  cfg_scale: 7,
-  sampler_name: "Euler a",
+  negative_prompt: process.env.SD_NEGATIVE_PROMPT ?? "blurry, distorted, extra limbs, text, watermark",
+  steps: Number(process.env.SD_STEPS ?? 28),
+  width: Number(process.env.SD_WIDTH ?? 512),
+  height: Number(process.env.SD_HEIGHT ?? 512),
+  cfg_scale: Number(process.env.SD_CFG_SCALE ?? 7),
+  sampler_name: process.env.SD_SAMPLER ?? "Euler a",
+  ...(process.env.SD_SCHEDULER ? { scheduler: process.env.SD_SCHEDULER } : {}),
+  ...(process.env.SD_HIRES_FIX === "true" ? { enable_hr: true, hr_scale: 1.5, hr_upscaler: "Latent" } : {}),
 };
 
 async function postToStableDiffusion(path: string, body: unknown): Promise<string> {

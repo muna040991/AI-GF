@@ -228,7 +228,41 @@ Leave that running in the background on its default port (7860). Skipping
 this step just makes the selfie button show a clear "couldn't reach Stable
 Diffusion" error instead of breaking anything else. For best results, fill
 in a character's **Appearance** field in the persona editor — it's used as
-the base prompt for every selfie generated for that character.
+the base prompt for every selfie generated for that character (the 📷
+button's popup shows you exactly what's included before generating, and
+lets you add more detail on top).
+
+**Getting better image quality:** by far the biggest factor is which
+checkpoint you have loaded in Automatic1111 — the app's defaults are just a
+starting point, not a ceiling. Match these to what your checkpoint actually
+wants (check its model card, or just match whatever resolution/sampler you
+already use in the webui itself) via env vars before running the app:
+
+```bash
+# Example for an SDXL checkpoint (e.g. epicjuggernautXL) at 768x1024, Karras:
+SD_WIDTH=768 SD_HEIGHT=1024 SD_SAMPLER="DPM++ 2M SDE" SD_SCHEDULER=karras npm run dev
+```
+
+- `SD_WIDTH` / `SD_HEIGHT` (default 512x512 — safe for most SD1.5-family
+  checkpoints; SDXL checkpoints usually want 1024x1024 or 768x1024+)
+- `SD_STEPS` (default 28), `SD_CFG_SCALE` (default 7)
+- `SD_SAMPLER` (default `Euler a`), `SD_SCHEDULER` (unset by default; try
+  `karras` if your checkpoint's own defaults use it)
+- `SD_NEGATIVE_PROMPT` to override the default negative prompt
+- `SD_HIRES_FIX=true` to enable a 1.5x hires fix pass on SD1.5 checkpoints
+  (sharper detail than raw upscaling to a resolution they weren't trained
+  for)
+
+Set these permanently via the `.bat` scripts (or a `.env` file) rather than
+retyping them each time — see the Notes section below for how env vars are
+picked up.
+
+**On face-swap extensions (ReActor, etc.):** this app doesn't wire those in,
+and won't — pasting a specific face (especially a real person's) onto every
+generated image is exactly the identity-locked generation this project
+deliberately doesn't do. The style-reference image (loose palette/vibe
+only, see above) is the supported way to nudge generations toward a
+character's look.
 
 ### 6. (Optional) Set up local image-to-video generation
 
